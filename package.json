@@ -1,0 +1,9 @@
+{
+  "name": "restourant-monorepo",
+  "private": true,
+  "scripts": {
+    "start": "node start.js",
+    "start:client": "npm --prefix client run dev -- --host 127.0.0.1",
+    "start:admin": "npm --prefix admin run dev -- --host 127.0.0.1"
+  }
+}
