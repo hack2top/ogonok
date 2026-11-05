@@ -1,5 +1,7 @@
 const { spawn } = require('child_process')
 const path = require('path')
+const http = require('http')
+const fs = require('fs')
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const services = [
@@ -7,6 +9,58 @@ const services = [
   { name: 'Admin', directory: path.join(__dirname, 'admin'), port: 5174 },
 ]
 
+if (process.env.RENDER || process.env.PORT) {
+  const port = Number(process.env.PORT || 10000)
+  const mimeTypes = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.ico': 'image/x-icon',
+  }
+
+  const server = http.createServer((request, response) => {
+    const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`)
+    const isAdmin = url.pathname === '/admin' || url.pathname.startsWith('/admin/')
+    const root = isAdmin ? path.join(__dirname, 'admin', 'dist') : path.join(__dirname, 'client', 'dist')
+    let relativePath = isAdmin ? url.pathname.slice('/admin'.length) : url.pathname
+    if (!relativePath || relativePath === '/') relativePath = '/index.html'
+
+    const filePath = path.join(root, relativePath.replace(/^\/+/, ''))
+    fs.readFile(filePath, (error, content) => {
+      if (!error) {
+        const extension = path.extname(filePath).toLowerCase()
+        response.setHeader('Content-Type', mimeTypes[extension] || 'application/octet-stream')
+        response.end(content)
+        return
+      }
+
+      const fallback = path.join(root, 'index.html')
+      fs.readFile(fallback, (fallbackError, fallbackContent) => {
+        if (fallbackError) {
+          response.statusCode = 404
+          response.end('Not found')
+          return
+        }
+
+        response.setHeader('Content-Type', 'text/html; charset=utf-8')
+        if (isAdmin) {
+          response.end(fallbackContent.toString().replaceAll('/assets/', '/admin/assets/'))
+        } else {
+          response.end(fallbackContent)
+        }
+      })
+    })
+  })
+
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`Restaurant service listening on port ${port}`)
+  })
+} else {
 const children = services.map((service) => {
   const child = spawn(npm, ['run', 'dev', '--', '--host', '127.0.0.1', '--port', String(service.port)], {
     cwd: service.directory,
@@ -25,4 +79,5 @@ for (const child of children) {
       process.exitCode = code || 1
     }
   })
+}
 }
