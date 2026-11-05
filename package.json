@@ -2,6 +2,8 @@
   "name": "restourant-monorepo",
   "private": true,
   "scripts": {
+    "install:all": "npm --prefix client install && npm --prefix admin install",
+    "build": "npm run install:all && npm --prefix client run build && npm --prefix admin run build",
     "start": "node start.js",
     "start:client": "npm --prefix client run dev -- --host 127.0.0.1",
     "start:admin": "npm --prefix admin run dev -- --host 127.0.0.1"
