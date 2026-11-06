@@ -1,8 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
 const sidebarOpen = ref(false)
 const navItems = [
   { path: '/', label: 'Dashboard', icon: 'grid' },
@@ -13,10 +14,16 @@ const navItems = [
   { path: '/analytics', label: 'Analytics', icon: 'chart' },
 ]
 const pageTitle = computed(() => navItems.find(item => item.path === route.path)?.label || 'Dashboard')
+
+function logout() {
+  sessionStorage.removeItem('savory-admin-auth')
+  router.replace('/login')
+}
 </script>
 
 <template>
-  <div class="admin-shell">
+  <RouterView v-if="route.name === 'login'" />
+  <div v-else class="admin-shell">
     <aside class="sidebar" :class="{ open: sidebarOpen }">
       <RouterLink class="admin-brand" to="/" @click="sidebarOpen = false">
         <span class="brand-mark">S</span>
@@ -43,7 +50,7 @@ const pageTitle = computed(() => navItems.find(item => item.path === route.path)
         <div class="admin-profile">
           <div class="avatar">AC</div>
           <div><strong>Alex Chen</strong><small>Administrator</small></div>
-          <button aria-label="Profile menu">•••</button>
+          <button class="logout-button" aria-label="Log out" title="Log out" @click="logout">↗</button>
         </div>
       </div>
     </aside>
