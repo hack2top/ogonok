@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import AdminMenuView from '../views/AdminMenuView.vue'
+import AdminManagementView from '../views/AdminManagementView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -9,12 +11,12 @@ const router = createRouter({
       name: 'home',
       component: HomeView,
     },
-    { path: '/orders', name: 'orders', component: HomeView },
-    { path: '/menu', name: 'menu', component: HomeView },
-    { path: '/reservations', name: 'reservations', component: HomeView },
-    { path: '/customers', name: 'customers', component: HomeView },
-    { path: '/analytics', name: 'analytics', component: HomeView },
-    { path: '/settings', name: 'settings', component: HomeView },
+    { path: '/orders', name: 'orders', component: AdminManagementView },
+    { path: '/menu', name: 'menu', component: AdminMenuView },
+    { path: '/reservations', name: 'reservations', component: AdminManagementView },
+    { path: '/customers', name: 'customers', component: AdminManagementView },
+    { path: '/analytics', name: 'analytics', component: AdminManagementView },
+    { path: '/settings', name: 'settings', component: AdminManagementView },
   ],
 })
 

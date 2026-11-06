@@ -7,7 +7,7 @@ useScrollAnimation()
 const categories = ['All', 'Starters', 'Mains', 'Desserts', 'Drinks']
 const active = ref('All')
 
-const menu = [
+const defaultMenu = [
   { name: 'Garden Burrata', description: 'Heirloom tomatoes, basil oil, sourdough', price: '$16', category: 'Starters', image: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=700&q=85' },
   { name: 'Beef Carpaccio', description: 'Parmesan, capers, rocket, truffle dressing', price: '$19', category: 'Starters', image: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=700&q=85' },
   { name: 'Wild Mushroom Soup', description: 'Cream, thyme, roasted chestnuts, brioche', price: '$13', category: 'Starters', image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=700&q=85' },
@@ -40,7 +40,16 @@ const menu = [
   { name: 'Cold Brew Coffee', description: 'Single-origin coffee, vanilla cream', price: '$7', category: 'Drinks', image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=700&q=85' },
 ]
 
-const filteredMenu = computed(() => active.value === 'All' ? menu : menu.filter((item) => item.category === active.value))
+function loadMenu() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('savory-menu') || 'null')
+    if (Array.isArray(stored) && stored.length) return stored
+  } catch {}
+  return defaultMenu
+}
+
+const menu = ref(loadMenu())
+const filteredMenu = computed(() => menu.value.filter((item) => item.available !== false && (active.value === 'All' || item.category === active.value)))
 </script>
 
 <template>
