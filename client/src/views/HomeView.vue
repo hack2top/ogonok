@@ -26,7 +26,7 @@ const gallery = [
 
 <template>
   <section class="hero">
-    <div class="hero-copy" data-reveal>
+    <div class="hero-copy" data-aos="fade-up" data-aos-delay="100">
       <p class="eyebrow">Seasonal kitchen · Est. 2014</p>
       <h1>Flavors that<br /><em>bring us together.</em></h1>
       <p class="hero-text">Modern comfort food, sourced with care and served with heart. Every plate is an invitation to stay a little longer.</p>
@@ -35,7 +35,7 @@ const gallery = [
         <RouterLink class="text-link" to="/reservation">Reserve a table <span>↗</span></RouterLink>
       </div>
     </div>
-    <div class="hero-visual">
+    <div class="hero-visual" data-aos="zoom-in" data-aos-delay="250">
       <div class="hero-image"></div>
       <div class="open-card"><span class="status-dot"></span><div><strong>Open today</strong><small>10:00 — 23:00</small></div></div>
       <div class="rating-card"><strong>4.9</strong><span>★★★★★</span><small>1,200+ reviews</small></div>
@@ -48,7 +48,7 @@ const gallery = [
       <RouterLink class="text-link" to="/menu">View full menu <span>→</span></RouterLink>
     </div>
     <div class="dish-grid">
-      <article v-for="dish in dishes" :key="dish.name" class="dish-card" data-reveal>
+      <article v-for="(dish, index) in dishes" :key="dish.name" class="dish-card" data-aos="zoom-in" :data-aos-delay="String(index * 120)">
         <div class="dish-image"><img :src="dish.image" :alt="dish.name" loading="lazy" /><span class="price">${{ dish.price }}</span></div>
         <div class="dish-info"><h3>{{ dish.name }}</h3><p>{{ dish.description }}</p></div>
       </article>
@@ -56,8 +56,8 @@ const gallery = [
   </section>
 
   <section class="story">
-    <div class="story-image" data-reveal></div>
-    <div class="story-copy" data-reveal>
+    <div class="story-image" data-aos="reveal-left"></div>
+    <div class="story-copy" data-aos="fade-left">
       <p class="eyebrow">Our philosophy</p>
       <h2>Simple ingredients,<br /><em>extraordinary moments.</em></h2>
       <p>For more than a decade, Savory has brought people together over thoughtful food, generous plates, and genuine hospitality. We cook with the rhythm of the seasons and work closely with local growers, fishermen, and artisan makers.</p>
@@ -71,7 +71,7 @@ const gallery = [
       <p class="section-note">Lunch, long dinners, celebrations, or a quiet glass at the bar—every table is treated with the same care.</p>
     </div>
     <div class="experience-grid">
-      <article v-for="item in experiences" :key="item.number" data-reveal>
+      <article v-for="(item, index) in experiences" :key="item.number" data-aos="fade-up" :data-aos-delay="String(index * 100)">
         <span>{{ item.number }}</span>
         <h3>{{ item.title }}</h3>
         <p>{{ item.text }}</p>
@@ -80,10 +80,10 @@ const gallery = [
   </section>
 
   <section class="stats-strip">
-    <div data-reveal><strong>12+</strong><span>Years of hospitality</span></div>
-    <div data-reveal><strong>30</strong><span>Seasonal dishes</span></div>
-    <div data-reveal><strong>18</strong><span>Local partners</span></div>
-    <div data-reveal><strong>4.9</strong><span>Guest rating</span></div>
+    <div data-aos="zoom-in"><strong>12+</strong><span>Years of hospitality</span></div>
+    <div data-aos="zoom-in"><strong>30</strong><span>Seasonal dishes</span></div>
+    <div data-aos="zoom-in"><strong>18</strong><span>Local partners</span></div>
+    <div data-aos="zoom-in"><strong>4.9</strong><span>Guest rating</span></div>
   </section>
 
   <section class="gallery-section content-wrap">
@@ -91,20 +91,20 @@ const gallery = [
       <div><p class="eyebrow">Around our table</p><h2>A glimpse of Savory</h2></div>
     </div>
     <div class="gallery-grid">
-      <figure v-for="(image, index) in gallery" :key="image" :class="`gallery-${index + 1}`" data-reveal>
+      <figure v-for="(image, index) in gallery" :key="image" :class="`gallery-${index + 1}`" data-aos="zoom-in" :data-aos-delay="String(index * 100)">
         <img :src="image" alt="Savory restaurant atmosphere" loading="lazy" />
       </figure>
     </div>
   </section>
 
-  <section class="testimonial" data-reveal>
+  <section class="testimonial" data-aos="fade-up">
     <p class="eyebrow">Guest story</p>
     <blockquote>“A room full of warmth, dishes with real personality, and service that makes you want to return.”</blockquote>
     <p>— Maya R. · Local Guide</p>
   </section>
 
   <section class="reservation-cta">
-    <div data-reveal><p class="eyebrow">Your table is waiting</p><h2>Come dine with us</h2><p>Open daily for lunch and dinner. Walk-ins are welcome, while reservations are recommended for evenings and weekends.</p></div>
-    <RouterLink class="button" to="/reservation" data-reveal>Reserve a table</RouterLink>
+    <div data-aos="fade-left"><p class="eyebrow">Your table is waiting</p><h2>Come dine with us</h2><p>Open daily for lunch and dinner. Walk-ins are welcome, while reservations are recommended for evenings and weekends.</p></div>
+    <RouterLink class="button" to="/reservation" data-aos="zoom-in">Reserve a table</RouterLink>
   </section>
 </template>

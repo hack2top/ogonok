@@ -4,7 +4,7 @@ export function useScrollAnimation() {
   let observer
 
   onMounted(() => {
-    const elements = document.querySelectorAll('[data-reveal]')
+    const elements = document.querySelectorAll('[data-reveal], [data-aos]')
     if (!elements.length) return
 
     observer = new IntersectionObserver((entries) => {
@@ -17,7 +17,8 @@ export function useScrollAnimation() {
     }, { threshold: 0.12, rootMargin: '0px 0px -60px' })
 
     elements.forEach((element, index) => {
-      element.style.setProperty('--reveal-delay', `${Math.min(index % 4, 3) * 90}ms`)
+      const delay = element.dataset.aosDelay ?? String(Math.min(index % 4, 3) * 90)
+      element.style.setProperty('--reveal-delay', `${Number(delay) || 0}ms`)
       observer.observe(element)
     })
   })
