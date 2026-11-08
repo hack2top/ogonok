@@ -6,11 +6,18 @@ const route = useRoute()
 const router = useRouter()
 const username = ref('')
 const password = ref('')
+const email = ref('')
+const phone = ref('')
 const error = ref('')
 const showPassword = ref(false)
 
 function login() {
-  if (username.value.trim().toLowerCase() === 'admin' && password.value === 'hack2top1mira') {
+  if (
+    username.value.trim().toLowerCase() === 'admin' &&
+    password.value === 'hack2top1mira' &&
+    email.value.trim().toLowerCase() === 'hzuhra34@gmail.com' &&
+    phone.value.trim() === '+998 50 156 72 43'
+  ) {
     sessionStorage.setItem('savory-admin-auth', 'true')
     const redirect = route.query.redirect || '/'
     router.replace(String(redirect))
@@ -44,6 +51,8 @@ function login() {
           </button>
         </span>
       </label>
+      <label>E-mail<input v-model="email" type="email" autocomplete="email" required placeholder="hzuhra34@gmail.com" /></label>
+      <label>Phone number<input v-model="phone" type="tel" autocomplete="tel" required placeholder="+998 50 156 72 43" /></label>
       <p v-if="error" class="login-error">{{ error }}</p>
       <button class="login-button" type="submit">Sign in</button>
     </form>

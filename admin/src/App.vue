@@ -19,6 +19,14 @@ function logout() {
   sessionStorage.removeItem('savory-admin-auth')
   router.replace('/login')
 }
+
+function returnToSite() {
+  if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
+    window.location.href = 'http://127.0.0.1:5173/'
+  } else {
+    window.location.href = '/'
+  }
+}
 </script>
 
 <template>
@@ -59,6 +67,7 @@ function logout() {
 
     <main class="admin-main">
       <header class="topbar">
+        <button class="return-site-button" type="button" @click="returnToSite">← Вернуться на сайт</button>
         <button class="mobile-menu" aria-label="Open menu" @click="sidebarOpen = true"><span></span><span></span></button>
         <div>
           <p>Restaurant overview</p>

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useScrollAnimation } from '../composables/useScrollAnimation'
+import fallbackImage from '../assets/images/hero.jpg'
 
 useScrollAnimation()
 
@@ -50,6 +51,28 @@ function loadMenu() {
 
 const menu = ref(loadMenu())
 const filteredMenu = computed(() => menu.value.filter((item) => item.available !== false && (active.value === 'All' || item.category === active.value)))
+
+function onImageError(event) {
+  event.target.onerror = null
+  event.target.src = fallbackImage
+}
+
+function addToCart(item) {
+  let cart = []
+  try { cart = JSON.parse(localStorage.getItem('savory-cart') || '[]') } catch {}
+  const existing = cart.find(product => product.name === item.name)
+  if (existing) existing.quantity += 1
+  else cart.push({
+    name: item.name,
+    description: item.description,
+    price: Number(String(item.price).replace(/[^0-9.]/g, '')) || 0,
+    image: item.image || fallbackImage,
+    quantity: 1,
+  })
+  localStorage.setItem('savory-cart', JSON.stringify(cart))
+  window.dispatchEvent(new Event('savory-cart-updated'))
+  window.alert(`${item.name} added to your cart.`)
+}
 </script>
 
 <template>
@@ -63,8 +86,8 @@ const filteredMenu = computed(() => menu.value.filter((item) => item.available !
     </div>
     <TransitionGroup name="menu-list" tag="div" class="menu-grid">
       <article v-for="item in filteredMenu" :key="item.name" class="menu-card" data-reveal>
-        <img :src="item.image" :alt="item.name" loading="lazy" />
-        <div><p class="menu-category">{{ item.category }}</p><h3>{{ item.name }}</h3><p>{{ item.description }}</p><strong>{{ item.price }}</strong></div>
+        <img :src="item.image || fallbackImage" :alt="item.name" loading="lazy" @error="onImageError" />
+        <div><p class="menu-category">{{ item.category }}</p><h3>{{ item.name }}</h3><p>{{ item.description }}</p><strong>{{ item.price }}</strong><button class="menu-add-button" type="button" @click="addToCart(item)">Add to order</button></div>
       </article>
     </TransitionGroup>
   </section>
