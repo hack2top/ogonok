@@ -4,14 +4,28 @@ import { RouterLink } from 'vue-router'
 import MobileMenu from './MobileMenu.vue'
 
 const menuOpen = ref(false)
-defineProps({ role: String })
+const props = defineProps({ role: String })
 const emit = defineEmits(['logout'])
+const accessDenied = ref(false)
 
 function adminUrl() {
   if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
     return 'http://127.0.0.1:5174/admin/'
   }
   return '/admin/'
+}
+
+function openAdmin(event) {
+  if (props.role !== 'admin') {
+    event.preventDefault()
+    accessDenied.value = true
+    return
+  }
+  window.location.href = adminUrl()
+}
+
+function closeAccessDenied() {
+  accessDenied.value = false
 }
 </script>
 
@@ -27,7 +41,10 @@ function adminUrl() {
       <RouterLink to="/menu">Menu</RouterLink>
       <RouterLink to="/reservation">Reservations</RouterLink>
       <RouterLink to="/track">Track order</RouterLink>
-      <a v-if="role === 'admin'" class="admin-nav-link" :href="adminUrl()">Панель администратора</a>
+      <button class="admin-nav-link guest-admin-button" type="button" @click="openAdmin">
+        <span>Панель администратора</span>
+        <span v-if="role === 'guest'" class="admin-lock" aria-label="Доступ закрыт">🔒</span>
+      </button>
     </nav>
 
     <div class="header-actions">
@@ -42,6 +59,15 @@ function adminUrl() {
         <span></span><span></span>
       </button>
     </div>
-    <MobileMenu :open="menuOpen" :role="role" @close="menuOpen = false" />
+    <MobileMenu :open="menuOpen" :role="role" @close="menuOpen = false" @denied="accessDenied = true" />
+
+    <div v-if="accessDenied" class="admin-access-modal" role="dialog" aria-modal="true" aria-label="Нет доступа">
+      <div class="admin-access-card">
+        <span class="admin-access-lock">🔒</span>
+        <h2>Нет доступа к админ-панели</h2>
+        <p>Эта панель доступна только пользователю со статусом «Администратор».</p>
+        <button type="button" @click="closeAccessDenied">Понятно</button>
+      </div>
+    </div>
   </header>
 </template>
