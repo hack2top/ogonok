@@ -1,6 +1,8 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import { useScrollAnimation } from '../composables/useScrollAnimation'
+import heroImage from '../assets/images/hero.jpg'
+import storyImage from '../assets/images/story.jpg'
 
 useScrollAnimation()
 
@@ -36,7 +38,7 @@ const gallery = [
       </div>
     </div>
     <div class="hero-visual" data-aos="zoom-in" data-aos-delay="250">
-      <div class="hero-image"></div>
+      <div class="hero-image" :style="{ backgroundImage: `url(${heroImage})` }"></div>
       <div class="open-card"><span class="status-dot"></span><div><strong>Open today</strong><small>10:00 — 23:00</small></div></div>
       <div class="rating-card"><strong>4.9</strong><span>★★★★★</span><small>1,200+ reviews</small></div>
     </div>
@@ -56,7 +58,7 @@ const gallery = [
   </section>
 
   <section class="story">
-    <div class="story-image" data-aos="reveal-left"></div>
+    <div class="story-image" data-aos="reveal-left" :style="{ backgroundImage: `url(${storyImage})` }"></div>
     <div class="story-copy" data-aos="fade-left">
       <p class="eyebrow">Our philosophy</p>
       <h2>Simple ingredients,<br /><em>extraordinary moments.</em></h2>
