@@ -1,18 +1,32 @@
 <script setup>
-import { ref } from 'vue'
+import { inject, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const requestSiteAuthentication = inject('requestSiteAuthentication')
 const address = ref('')
 const phone = ref('')
 const payment = ref('Cash on delivery')
 const success = ref(false)
 
 let profile = {}
-try { profile = JSON.parse(sessionStorage.getItem('savory-user-profile') || '{}') } catch {}
-phone.value = profile.phone || ''
+function loadProfile() {
+  try { profile = JSON.parse(sessionStorage.getItem('savory-user-profile') || '{}') } catch { profile = {} }
+  if (!phone.value) phone.value = profile.phone || ''
+}
+loadProfile()
 
 function placeOrder() {
+  const role = sessionStorage.getItem('savory-site-access')
+  if (role !== 'admin' && role !== 'guest') {
+    requestSiteAuthentication(() => {
+      loadProfile()
+      placeOrder()
+    })
+    return
+  }
+
+  loadProfile()
   let cart = []
   try { cart = JSON.parse(localStorage.getItem('savory-cart') || '[]') } catch {}
   if (!cart.length) return

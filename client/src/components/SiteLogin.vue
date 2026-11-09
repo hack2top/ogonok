@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 
 defineProps({ show: Boolean })
-const emit = defineEmits(['authenticated'])
+const emit = defineEmits(['authenticated', 'close'])
 
 const username = ref('')
 const password = ref('')
@@ -43,17 +43,18 @@ function submit() {
 </script>
 
 <template>
-  <div v-if="show" class="site-login-overlay">
+  <div v-if="show" class="site-login-overlay" role="dialog" aria-modal="true" aria-labelledby="site-login-title">
     <form class="site-login-card" @submit.prevent="submit">
+      <button class="site-login-close" type="button" aria-label="Закрыть" @click="emit('close')">×</button>
       <div class="login-brand-small"><span>S</span><div><strong>SAVORY</strong><small>MEMBER ACCESS</small></div></div>
-      <p class="site-login-eyebrow">Добро пожаловать</p>
-      <h1>Войдите на сайт</h1>
+      <p class="site-login-eyebrow">Для оформления заказа</p>
+      <h1 id="site-login-title">Войдите в аккаунт</h1>
       <label>Логин<input v-model="username" type="text" autocomplete="username" required autofocus placeholder="Введите логин" /></label>
       <label>Пароль<span class="site-password"><input v-model="password" :type="showPassword ? 'text' : 'password'" autocomplete="current-password" required placeholder="Введите пароль" /><button type="button" @click="showPassword = !showPassword">{{ showPassword ? 'Скрыть' : 'Показать' }}</button></span></label>
       <label>E-mail<input v-model="email" type="email" autocomplete="email" required placeholder="name@example.com" /></label>
       <label>Номер телефона<input v-model="phone" type="tel" autocomplete="tel" required placeholder="+998 90 123 45 67" /></label>
       <p v-if="error" class="site-login-error">{{ error }}</p>
-      <button class="site-login-button" type="submit">Войти</button>
+      <button class="site-login-button" type="submit">Войти и продолжить</button>
       <div class="guest-credentials"><span>Обычный доступ</span><p>Логин: <b>guest</b><br />Пароль: <b>guest123</b></p></div>
     </form>
   </div>
