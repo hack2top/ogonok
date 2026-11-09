@@ -11,18 +11,26 @@ const phone = ref('')
 const error = ref('')
 const showPassword = ref(false)
 
-function login() {
-  if (
-    username.value.trim().toLowerCase() === 'admin' &&
-    password.value === 'hack2top1mira' &&
-    email.value.trim().toLowerCase() === 'hzuhra34@gmail.com' &&
-    phone.value.trim() === '+998 50 156 72 43'
-  ) {
+async function login() {
+  error.value = ''
+  try {
+    const response = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: username.value,
+        password: password.value,
+        email: email.value,
+        phone: phone.value,
+      }),
+    })
+    if (!response.ok) throw new Error('Incorrect administrator credentials.')
     sessionStorage.setItem('savory-admin-auth', 'true')
     const redirect = route.query.redirect || '/'
     router.replace(String(redirect))
-  } else {
-    error.value = 'Incorrect username or password.'
+  } catch (loginError) {
+    console.error('Administrator sign-in failed:', loginError)
+    error.value = 'Incorrect credentials or the admin service is unavailable.'
   }
 }
 </script>

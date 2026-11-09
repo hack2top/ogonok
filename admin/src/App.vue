@@ -16,6 +16,9 @@ const navItems = [
 const pageTitle = computed(() => navItems.find(item => item.path === route.path)?.label || 'Dashboard')
 
 function logout() {
+  fetch('/api/admin/session', { method: 'DELETE' }).catch(error => {
+    console.error('Unable to end administrator session:', error)
+  })
   sessionStorage.removeItem('savory-admin-auth')
   router.replace('/login')
 }

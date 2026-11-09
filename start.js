@@ -2,6 +2,7 @@ const { spawn } = require('child_process')
 const path = require('path')
 const http = require('http')
 const fs = require('fs')
+const { handleApi } = require('./shared-api.cjs')
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const services = [
@@ -25,6 +26,10 @@ if (process.env.RENDER || process.env.PORT) {
 
   const server = http.createServer((request, response) => {
     const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`)
+    if (url.pathname.startsWith('/api/')) {
+      handleApi(request, response, url)
+      return
+    }
     const isAdmin = url.pathname === '/admin' || url.pathname.startsWith('/admin/')
     const root = isAdmin ? path.join(__dirname, 'admin', 'dist') : path.join(__dirname, 'client', 'dist')
     let relativePath = isAdmin ? url.pathname.slice('/admin'.length) : url.pathname
@@ -61,6 +66,12 @@ if (process.env.RENDER || process.env.PORT) {
     console.log(`Restaurant service listening on port ${port}`)
   })
 } else {
+const apiServer = http.createServer((request, response) => {
+  const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`)
+  handleApi(request, response, url)
+})
+apiServer.listen(5175, '127.0.0.1', () => console.log('Shared data API listening on port 5175'))
+
 const children = services.map((service) => {
   const child = spawn(npm, ['run', 'dev', '--', '--host', '127.0.0.1', '--port', String(service.port)], {
     cwd: service.directory,

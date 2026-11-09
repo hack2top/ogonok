@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { seedOrders, seedReservations } from '../data/adminData'
 
@@ -15,9 +15,68 @@ const orderStatuses = ['New', 'Preparing', 'Ready', 'Delivered', 'Cancelled']
 
 const orders = ref(JSON.parse(localStorage.getItem('savory-orders') || 'null') || seedOrders.map(order => ({ ...order })))
 const reservations = ref(JSON.parse(localStorage.getItem('savory-reservations') || 'null') || seedReservations.map(item => ({ ...item })))
+let sharedDataTimer
+let disposed = false
 
 watch(orders, value => localStorage.setItem('savory-orders', JSON.stringify(value)), { deep: true })
 watch(reservations, value => localStorage.setItem('savory-reservations', JSON.stringify(value)), { deep: true })
+
+async function initializeSharedData() {
+  try {
+    const [orderResponse, reservationResponse] = await Promise.all([
+      fetch('/api/orders'),
+      fetch('/api/reservations'),
+    ])
+    if (!orderResponse.ok || !reservationResponse.ok) throw new Error('Could not load shared orders and reservations.')
+    const sharedOrders = await orderResponse.json()
+    const sharedReservations = await reservationResponse.json()
+
+    if (sharedOrders.length) orders.value = sharedOrders
+    else {
+      const responses = await Promise.all(orders.value.map(order => fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
+      })))
+      if (responses.some(response => !response.ok)) throw new Error('Could not initialize shared orders.')
+    }
+
+    if (sharedReservations.length) reservations.value = sharedReservations
+    else {
+      const responses = await Promise.all(reservations.value.map(item => fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      })))
+      if (responses.some(response => !response.ok)) throw new Error('Could not initialize shared reservations.')
+    }
+  } catch (error) {
+    console.error('Unable to synchronize admin data:', error)
+    window.alert('Не удалось подключиться к общим данным. Запустите сайт через команду npm start.')
+  }
+}
+async function refreshSharedData() {
+  try {
+    const [orderResponse, reservationResponse] = await Promise.all([
+      fetch('/api/orders'),
+      fetch('/api/reservations'),
+    ])
+    if (!orderResponse.ok || !reservationResponse.ok) throw new Error('Could not refresh shared data.')
+    const [sharedOrders, sharedReservations] = await Promise.all([
+      orderResponse.json(),
+      reservationResponse.json(),
+    ])
+    if (JSON.stringify(orders.value) !== JSON.stringify(sharedOrders)) orders.value = sharedOrders
+    if (JSON.stringify(reservations.value) !== JSON.stringify(sharedReservations)) reservations.value = sharedReservations
+  } catch (error) {
+    console.error('Unable to refresh admin data:', error)
+  }
+}
+
+onBeforeUnmount(() => {
+  disposed = true
+  window.clearInterval(sharedDataTimer)
+})
 
 const filteredOrders = computed(() => orders.value.filter(order =>
   (orderStatus.value === 'All' || order.status === orderStatus.value) &&
@@ -49,12 +108,38 @@ const filteredCustomers = computed(() => customers.value.filter(customer =>
   `${customer.name} ${customer.phone}`.toLowerCase().includes(customerSearch.value.toLowerCase())
 ))
 
-function changeOrderStatus(order, status) {
+async function changeOrderStatus(order, status) {
+  const previousStatus = order.status
   order.status = status
+  try {
+    const response = await fetch(`/api/orders/${encodeURIComponent(order.id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+    if (!response.ok) throw new Error('The order status could not be synchronized.')
+  } catch (error) {
+    order.status = previousStatus
+    console.error('Unable to update order status:', error)
+    window.alert('Не удалось обновить статус заказа. Проверьте подключение и повторите попытку.')
+  }
 }
 
-function changeReservationStatus(item, status) {
+async function changeReservationStatus(item, status) {
+  const previousStatus = item.status
   item.status = status
+  try {
+    const response = await fetch(`/api/reservations/${encodeURIComponent(item.id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+    if (!response.ok) throw new Error('The reservation status could not be synchronized.')
+  } catch (error) {
+    item.status = previousStatus
+    console.error('Unable to update reservation status:', error)
+    window.alert('Не удалось обновить статус бронирования. Проверьте подключение и повторите попытку.')
+  }
 }
 
 function formatMoney(amount) {
@@ -66,6 +151,10 @@ function saveSettings() {
   localStorage.setItem('savory-settings', JSON.stringify(settings.value))
   window.alert('Restaurant settings saved.')
 }
+
+initializeSharedData().then(() => {
+  if (!disposed) sharedDataTimer = window.setInterval(refreshSharedData, 3000)
+})
 </script>
 
 <template>

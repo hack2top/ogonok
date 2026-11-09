@@ -23,8 +23,18 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
-  const authenticated = sessionStorage.getItem('savory-admin-auth') === 'true'
+router.beforeEach(async (to) => {
+  let authenticated = sessionStorage.getItem('savory-admin-auth') === 'true'
+  if (authenticated) {
+    try {
+      const response = await fetch('/api/admin/session')
+      const session = response.ok ? await response.json() : { authenticated: false }
+      authenticated = session.authenticated === true
+    } catch {
+      authenticated = false
+    }
+    if (!authenticated) sessionStorage.removeItem('savory-admin-auth')
+  }
   if (to.meta.requiresAuth && !authenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
