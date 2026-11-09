@@ -1,8 +1,7 @@
 <script setup>
-import { computed, inject, ref } from 'vue'
+import { computed, ref } from 'vue'
 import fallbackImage from '../assets/images/hero.jpg'
 
-const requestSiteAuthentication = inject('requestSiteAuthentication')
 const categories = ['All', 'Starters', 'Mains', 'Desserts', 'Drinks']
 const active = ref('All')
 
@@ -56,12 +55,6 @@ function onImageError(event) {
 }
 
 function addToCart(item) {
-  const role = sessionStorage.getItem('savory-site-access')
-  if (role !== 'admin' && role !== 'guest') {
-    requestSiteAuthentication(() => addToCart(item))
-    return
-  }
-
   let cart = []
   try { cart = JSON.parse(localStorage.getItem('savory-cart') || '[]') } catch {}
   const existing = cart.find(product => product.name === item.name)
