@@ -6,7 +6,7 @@ import EmployeeManagementView from '../views/EmployeeManagementView.vue'
 import LoginView from '../views/LoginView.vue'
 
 const routesByRole = {
-  chef: ['/menu'],
+  chef: ['/menu', '/orders'],
   courier: ['/orders'],
 }
 

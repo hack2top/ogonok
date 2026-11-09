@@ -75,8 +75,8 @@ function passwordMatches(password, employee) {
 function hasPermission(session, action) {
   if (!session) return false
   if (session.role === 'creator' || session.role === 'admin') return true
-  if (session.role === 'analyst') return action !== 'manageEmployees'
-  if (session.role === 'chef') return ['viewMenu', 'editMenu'].includes(action)
+  if (session.role === 'analyst') return action !== 'addEmployees'
+  if (session.role === 'chef') return ['viewMenu', 'editMenu', 'viewOrders'].includes(action)
   if (session.role === 'courier') return ['viewOrders', 'editOrders'].includes(action)
   return false
 }
@@ -183,7 +183,7 @@ async function handleApi(request, response, url) {
     }
 
     if (request.method === 'POST') {
-      if (!requirePermission(response, adminSession, 'manageEmployees')) return true
+      if (!requirePermission(response, adminSession, 'addEmployees')) return true
       try {
         const body = await readBody(request)
         const username = String(body.username || '').trim()
@@ -227,6 +227,7 @@ async function handleApi(request, response, url) {
       return true
     }
     if (request.method === 'PATCH') {
+      if (!requirePermission(response, adminSession, 'manageEmployees')) return true
       try {
         const body = await readBody(request)
         const employee = state.employees[index]

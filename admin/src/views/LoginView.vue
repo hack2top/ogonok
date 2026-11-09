@@ -26,6 +26,7 @@ async function login() {
     sessionStorage.setItem('savory-admin-auth', 'true')
     sessionStorage.setItem('savory-admin-role', session.role)
     sessionStorage.setItem('savory-admin-username', session.username)
+    window.dispatchEvent(new CustomEvent('savory-admin-session-updated', { detail: session }))
     const defaultRoute = session.role === 'chef' ? '/menu' : session.role === 'courier' ? '/orders' : '/'
     const redirect = route.query.redirect || defaultRoute
     router.replace(String(redirect))

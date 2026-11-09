@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -29,14 +29,28 @@ const navItems = [
   { path: '/settings', label: 'Settings', icon: 'settings' },
 ]
 const limitedRoutes = computed(() => user.value.role === 'chef'
-  ? ['/menu']
+  ? ['/menu', '/orders']
   : user.value.role === 'courier'
     ? ['/orders']
     : null)
 const visibleNavItems = computed(() => navItems.filter(item => !limitedRoutes.value || limitedRoutes.value.includes(item.path)))
 const pageTitle = computed(() => route.path === '/employees' ? 'HR' : navItems.find(item => item.path === route.path)?.label || 'Dashboard')
 
+function updateUser(session) {
+  user.value = {
+    username: session.username || '',
+    displayName: session.displayName || '',
+    role: session.role || '',
+    roleName: roleLabels[session.role] || session.roleName || '',
+  }
+}
+
+function onSessionUpdated(event) {
+  updateUser(event.detail)
+}
+
 onMounted(async () => {
+  window.addEventListener('savory-admin-session-updated', onSessionUpdated)
   try {
     const response = await fetch('/api/admin/session')
     if (!response.ok) throw new Error('Could not load employee session.')
@@ -48,17 +62,13 @@ onMounted(async () => {
       sessionStorage.removeItem('savory-admin-username')
       return
     }
-    user.value = {
-      username: session.username || '',
-      displayName: session.displayName || '',
-      role: session.role || '',
-      roleName: session.roleName || '',
-    }
-    if (user.value.role) user.value.roleName = roleLabels[user.value.role] || user.value.roleName
+    updateUser(session)
   } catch (error) {
     console.error('Unable to load HR session:', error)
   }
 })
+
+onBeforeUnmount(() => window.removeEventListener('savory-admin-session-updated', onSessionUpdated))
 
 async function logout() {
   try {
@@ -67,6 +77,7 @@ async function logout() {
   } catch (error) {
     console.error('Unable to end HR session:', error)
   } finally {
+    user.value = { username: '', displayName: '', role: '', roleName: '' }
     sessionStorage.removeItem('savory-admin-auth')
     sessionStorage.removeItem('savory-admin-role')
     sessionStorage.removeItem('savory-admin-username')

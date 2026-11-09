@@ -14,6 +14,7 @@ const selectedDate = ref('')
 const orderStatuses = ['New', 'Preparing', 'Ready', 'Delivered', 'Cancelled']
 const currentRole = sessionStorage.getItem('savory-admin-role')
 const canViewReservations = ['creator', 'admin', 'analyst'].includes(currentRole)
+const canEditOrders = ['creator', 'admin', 'courier'].includes(currentRole)
 
 const orders = ref(JSON.parse(localStorage.getItem('savory-orders') || 'null') || seedOrders.map(order => ({ ...order })))
 const reservations = ref(JSON.parse(localStorage.getItem('savory-reservations') || 'null') || seedReservations.map(item => ({ ...item })))
@@ -172,7 +173,7 @@ initializeSharedData().then(() => {
             <tbody>
               <tr v-for="order in filteredOrders" :key="order.id">
                 <td><strong>{{ order.id }}</strong></td><td><b>{{ order.customer }}</b><small>{{ order.phone }}</small><small>{{ order.email || 'No email' }}</small></td><td>{{ order.date }}<small>{{ order.time }}</small></td><td>{{ order.type }}</td><td><b>{{ order.itemNames || order.items }}</b></td><td><strong>{{ formatMoney(order.amount) }}</strong></td>
-                <td><select class="status-select" :value="order.status" @change="changeOrderStatus(order, $event.target.value)"><option v-for="status in orderStatuses" :key="status">{{ status }}</option></select></td>
+                <td><select class="status-select" :value="order.status" :disabled="!canEditOrders" @change="changeOrderStatus(order, $event.target.value)"><option v-for="status in orderStatuses" :key="status">{{ status }}</option></select></td>
               </tr>
             </tbody>
           </table>

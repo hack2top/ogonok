@@ -6,7 +6,8 @@ const loading = ref(true)
 const error = ref('')
 const saving = ref(false)
 const currentRole = sessionStorage.getItem('savory-admin-role')
-const canManageEmployees = ['creator', 'admin'].includes(currentRole)
+const canManageEmployees = ['creator', 'admin', 'analyst'].includes(currentRole)
+const canAddEmployees = ['creator', 'admin'].includes(currentRole)
 const roles = [
   { value: 'chef', label: 'Главный шеф' },
   { value: 'courier', label: 'Курьер' },
@@ -64,10 +65,12 @@ async function updateEmployee(employee) {
   saving.value = true
   error.value = ''
   try {
+    const changes = { ...edits.value[employee.username] }
+    if (!changes.password) delete changes.password
     const response = await fetch(`/api/employees/${encodeURIComponent(employee.username)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(edits.value[employee.username]),
+      body: JSON.stringify(changes),
     })
     const result = await response.json()
     if (!response.ok) throw new Error(result.error || 'Не удалось сохранить изменения.')
@@ -106,12 +109,13 @@ onMounted(loadEmployees)
 
     <p v-if="error" class="hr-error" role="alert">{{ error }}</p>
     <p v-if="!canManageEmployees" class="hr-readonly-note">У вас доступ только для просмотра списка сотрудников.</p>
+    <p v-else-if="!canAddEmployees" class="hr-readonly-note">Аналитик может изменять и удалять сотрудников, но не может добавлять новых.</p>
 
-    <form v-if="canManageEmployees" class="hr-add-form panel" @submit.prevent="addEmployee">
+    <form v-if="canAddEmployees" class="hr-add-form panel" @submit.prevent="addEmployee">
       <div class="panel-heading"><div><p>Новый сотрудник</p><strong>Создать учетную запись</strong></div></div>
       <div class="hr-form-grid">
         <label>Имя<input v-model="newEmployee.displayName" required maxlength="80" placeholder="Имя и фамилия" /></label>
-        <label>Логин<input v-model="newEmployee.username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9._-]+" autocomplete="off" placeholder="Уникальный логин" /></label>
+        <label>Логин<input v-model="newEmployee.username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9._\-]+" autocomplete="off" placeholder="Уникальный логин" /></label>
         <label>Пароль<input v-model="newEmployee.password" required minlength="8" type="password" autocomplete="new-password" placeholder="Не менее 8 символов" /></label>
         <label>Роль<select v-model="newEmployee.role"><option v-for="role in roles" :key="role.value" :value="role.value">{{ role.label }}</option></select></label>
         <button class="primary-button" type="submit" :disabled="saving">Добавить сотрудника</button>
