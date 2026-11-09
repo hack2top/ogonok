@@ -4,8 +4,6 @@ import { RouterLink } from 'vue-router'
 import MobileMenu from './MobileMenu.vue'
 
 const menuOpen = ref(false)
-defineProps({ role: String })
-const emit = defineEmits(['logout'])
 </script>
 
 <template>
@@ -23,8 +21,6 @@ const emit = defineEmits(['logout'])
     </nav>
 
     <div class="header-actions">
-      <span v-if="role" class="site-role" :class="role">{{ role === 'admin' ? 'Администратор' : 'Гость' }}</span>
-      <button v-if="role" class="site-logout" type="button" @click="emit('logout')">Выйти</button>
       <RouterLink class="icon-button" to="/cart" aria-label="Shopping cart">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L21 7H6m4 12a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm8 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg>
         <span>Cart</span>

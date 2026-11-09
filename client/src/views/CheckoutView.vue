@@ -3,30 +3,19 @@ import { inject, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const requestSiteAuthentication = inject('requestSiteAuthentication')
+const requestContactDetails = inject('requestContactDetails')
 const address = ref('')
-const phone = ref('')
 const payment = ref('Cash on delivery')
 const success = ref(false)
 
 let profile = {}
-function loadProfile() {
-  try { profile = JSON.parse(sessionStorage.getItem('savory-user-profile') || '{}') } catch { profile = {} }
-  if (!phone.value) phone.value = profile.phone || ''
-}
-loadProfile()
 
 function placeOrder() {
-  const role = sessionStorage.getItem('savory-site-access')
-  if (role !== 'admin' && role !== 'guest') {
-    requestSiteAuthentication(() => {
-      loadProfile()
-      placeOrder()
-    })
-    return
-  }
+  requestContactDetails(() => placeOrderWithContact())
+}
 
-  loadProfile()
+function placeOrderWithContact() {
+  try { profile = JSON.parse(sessionStorage.getItem('savory-user-profile') || '{}') } catch { profile = {} }
   let cart = []
   try { cart = JSON.parse(localStorage.getItem('savory-cart') || '[]') } catch {}
   if (!cart.length) return
@@ -36,8 +25,8 @@ function placeOrder() {
   const now = new Date()
   orders.unshift({
     id: `#SV-${Date.now().toString().slice(-6)}`,
-    customer: profile.name || 'Guest',
-    phone: phone.value,
+    customer: profile.email || 'Customer',
+    phone: profile.phone || '',
     email: profile.email || '',
     date: now.toISOString().slice(0, 10),
     time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -60,7 +49,6 @@ function placeOrder() {
     <p class="eyebrow">Final step</p><h1>Checkout</h1>
     <form class="checkout-form booking-form" @submit.prevent="placeOrder">
       <label>Delivery address<input v-model="address" required placeholder="Street, building, apartment" /></label>
-      <label>Phone number<input v-model="phone" required type="tel" placeholder="+998" /></label>
       <label>Payment method<select v-model="payment"><option>Cash on delivery</option><option>Card</option></select></label>
       <button class="button" type="submit">Place order</button>
       <p v-if="success" class="checkout-success">Order placed successfully. Opening order tracking...</p>
