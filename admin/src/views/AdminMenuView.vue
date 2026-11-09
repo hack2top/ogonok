@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { loadMenu, saveMenu } from '../data/menuData'
 
 const menu = ref(loadMenu())
@@ -7,6 +7,8 @@ const activeCategory = ref('All')
 const search = ref('')
 const editing = ref(null)
 const showModal = ref(false)
+const syncError = ref('')
+let menuRefreshTimer
 const categories = ['Starters', 'Mains', 'Desserts', 'Drinks']
 const emptyDish = () => ({ name: '', description: '', price: '', category: 'Starters', image: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=700&q=85', available: true })
 
@@ -26,32 +28,88 @@ function openEdit(dish) {
   showModal.value = true
 }
 
-function saveDish() {
+async function persistMenu() {
+  const response = await fetch('/api/menu', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(menu.value),
+  })
+  if (!response.ok) throw new Error('Не удалось сохранить меню на сервере.')
+  saveMenu(menu.value)
+  syncError.value = ''
+}
+
+async function refreshMenu() {
+  try {
+    const response = await fetch('/api/menu')
+    if (!response.ok) throw new Error('Не удалось загрузить общее меню.')
+    const sharedMenu = await response.json()
+    if (sharedMenu.length) {
+      menu.value = sharedMenu
+      saveMenu(sharedMenu)
+    } else {
+      await persistMenu()
+    }
+  } catch (error) {
+    console.error('Unable to synchronize menu:', error)
+    syncError.value = error.message
+  }
+}
+
+onMounted(() => {
+  refreshMenu()
+  menuRefreshTimer = window.setInterval(refreshMenu, 5000)
+})
+onBeforeUnmount(() => window.clearInterval(menuRefreshTimer))
+
+async function saveDish() {
   if (!editing.value.name.trim()) return
+  const previous = [...menu.value]
   if (editing.value.id) {
     const index = menu.value.findIndex((dish) => dish.id === editing.value.id)
     menu.value[index] = { ...editing.value, price: Number(editing.value.price) }
   } else {
     menu.value.push({ ...editing.value, id: Date.now(), price: Number(editing.value.price) })
   }
-  saveMenu(menu.value)
+  try {
+    await persistMenu()
+  } catch (error) {
+    console.error('Unable to save dish:', error)
+    menu.value = previous
+    syncError.value = error.message
+    return
+  }
   showModal.value = false
 }
 
-function deleteDish(id) {
+async function deleteDish(id) {
   if (!confirm('Delete this dish from the menu?')) return
+  const previous = [...menu.value]
   menu.value = menu.value.filter((dish) => dish.id !== id)
-  saveMenu(menu.value)
+  try {
+    await persistMenu()
+  } catch (error) {
+    console.error('Unable to delete dish:', error)
+    menu.value = previous
+    syncError.value = error.message
+  }
 }
 
-function toggleAvailability(dish) {
+async function toggleAvailability(dish) {
   dish.available = !dish.available
-  saveMenu(menu.value)
+  try {
+    await persistMenu()
+  } catch (error) {
+    console.error('Unable to update dish availability:', error)
+    dish.available = !dish.available
+    syncError.value = error.message
+  }
 }
 </script>
 
 <template>
   <div class="management-page">
+    <p v-if="syncError" class="hr-error" role="alert">{{ syncError }}</p>
     <div class="management-toolbar">
       <label class="management-search"><span>⌕</span><input v-model="search" type="search" placeholder="Search dishes..." /></label>
       <button class="primary-button" @click="openAdd">＋ Add dish</button>

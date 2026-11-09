@@ -12,6 +12,8 @@ const customerSearch = ref('')
 const reservationStatus = ref('All')
 const selectedDate = ref('')
 const orderStatuses = ['New', 'Preparing', 'Ready', 'Delivered', 'Cancelled']
+const currentRole = sessionStorage.getItem('savory-admin-role')
+const canViewReservations = ['creator', 'admin', 'analyst'].includes(currentRole)
 
 const orders = ref(JSON.parse(localStorage.getItem('savory-orders') || 'null') || seedOrders.map(order => ({ ...order })))
 const reservations = ref(JSON.parse(localStorage.getItem('savory-reservations') || 'null') || seedReservations.map(item => ({ ...item })))
@@ -23,13 +25,9 @@ watch(reservations, value => localStorage.setItem('savory-reservations', JSON.st
 
 async function initializeSharedData() {
   try {
-    const [orderResponse, reservationResponse] = await Promise.all([
-      fetch('/api/orders'),
-      fetch('/api/reservations'),
-    ])
-    if (!orderResponse.ok || !reservationResponse.ok) throw new Error('Could not load shared orders and reservations.')
+    const orderResponse = await fetch('/api/orders')
+    if (!orderResponse.ok) throw new Error('Could not load shared orders.')
     const sharedOrders = await orderResponse.json()
-    const sharedReservations = await reservationResponse.json()
 
     if (sharedOrders.length) orders.value = sharedOrders
     else {
@@ -41,6 +39,10 @@ async function initializeSharedData() {
       if (responses.some(response => !response.ok)) throw new Error('Could not initialize shared orders.')
     }
 
+    if (!canViewReservations) return
+    const reservationResponse = await fetch('/api/reservations')
+    if (!reservationResponse.ok) throw new Error('Could not load shared reservations.')
+    const sharedReservations = await reservationResponse.json()
     if (sharedReservations.length) reservations.value = sharedReservations
     else {
       const responses = await Promise.all(reservations.value.map(item => fetch('/api/reservations', {
@@ -57,16 +59,14 @@ async function initializeSharedData() {
 }
 async function refreshSharedData() {
   try {
-    const [orderResponse, reservationResponse] = await Promise.all([
-      fetch('/api/orders'),
-      fetch('/api/reservations'),
-    ])
-    if (!orderResponse.ok || !reservationResponse.ok) throw new Error('Could not refresh shared data.')
-    const [sharedOrders, sharedReservations] = await Promise.all([
-      orderResponse.json(),
-      reservationResponse.json(),
-    ])
+    const orderResponse = await fetch('/api/orders')
+    if (!orderResponse.ok) throw new Error('Could not refresh shared orders.')
+    const sharedOrders = await orderResponse.json()
     if (JSON.stringify(orders.value) !== JSON.stringify(sharedOrders)) orders.value = sharedOrders
+    if (!canViewReservations) return
+    const reservationResponse = await fetch('/api/reservations')
+    if (!reservationResponse.ok) throw new Error('Could not refresh shared reservations.')
+    const sharedReservations = await reservationResponse.json()
     if (JSON.stringify(reservations.value) !== JSON.stringify(sharedReservations)) reservations.value = sharedReservations
   } catch (error) {
     console.error('Unable to refresh admin data:', error)

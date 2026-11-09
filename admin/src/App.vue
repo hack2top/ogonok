@@ -1,26 +1,77 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
 const sidebarOpen = ref(false)
+const user = ref({
+  username: sessionStorage.getItem('savory-admin-username') || '',
+  displayName: '',
+  role: sessionStorage.getItem('savory-admin-role') || '',
+  roleName: '',
+})
+const roleLabels = {
+  creator: 'Создатель',
+  chef: 'Главный шеф',
+  courier: 'Курьер',
+  admin: 'Админ',
+  analyst: 'Аналитик',
+}
 const navItems = [
   { path: '/', label: 'Dashboard', icon: 'grid' },
-  { path: '/orders', label: 'Orders', icon: 'bag', count: 8 },
+  { path: '/orders', label: 'Orders', icon: 'bag' },
   { path: '/menu', label: 'Menu', icon: 'menu' },
   { path: '/reservations', label: 'Reservations', icon: 'calendar' },
   { path: '/customers', label: 'Customers', icon: 'users' },
   { path: '/analytics', label: 'Analytics', icon: 'chart' },
+  { path: '/employees', label: 'HR', icon: 'users' },
+  { path: '/settings', label: 'Settings', icon: 'settings' },
 ]
-const pageTitle = computed(() => navItems.find(item => item.path === route.path)?.label || 'Dashboard')
+const limitedRoutes = computed(() => user.value.role === 'chef'
+  ? ['/menu']
+  : user.value.role === 'courier'
+    ? ['/orders']
+    : null)
+const visibleNavItems = computed(() => navItems.filter(item => !limitedRoutes.value || limitedRoutes.value.includes(item.path)))
+const pageTitle = computed(() => route.path === '/employees' ? 'HR' : navItems.find(item => item.path === route.path)?.label || 'Dashboard')
 
-function logout() {
-  fetch('/api/admin/session', { method: 'DELETE' }).catch(error => {
-    console.error('Unable to end administrator session:', error)
-  })
-  sessionStorage.removeItem('savory-admin-auth')
-  router.replace('/login')
+onMounted(async () => {
+  try {
+    const response = await fetch('/api/admin/session')
+    if (!response.ok) throw new Error('Could not load employee session.')
+    const session = await response.json()
+    if (!session.authenticated) {
+      user.value = { username: '', displayName: '', role: '', roleName: '' }
+      sessionStorage.removeItem('savory-admin-auth')
+      sessionStorage.removeItem('savory-admin-role')
+      sessionStorage.removeItem('savory-admin-username')
+      return
+    }
+    user.value = {
+      username: session.username || '',
+      displayName: session.displayName || '',
+      role: session.role || '',
+      roleName: session.roleName || '',
+    }
+    if (user.value.role) user.value.roleName = roleLabels[user.value.role] || user.value.roleName
+  } catch (error) {
+    console.error('Unable to load HR session:', error)
+  }
+})
+
+async function logout() {
+  try {
+    const response = await fetch('/api/admin/session', { method: 'DELETE' })
+    if (!response.ok) throw new Error('Could not end HR session.')
+  } catch (error) {
+    console.error('Unable to end HR session:', error)
+  } finally {
+    sessionStorage.removeItem('savory-admin-auth')
+    sessionStorage.removeItem('savory-admin-role')
+    sessionStorage.removeItem('savory-admin-username')
+    router.replace('/login')
+  }
 }
 
 function returnToSite() {
@@ -38,13 +89,13 @@ function returnToSite() {
     <aside class="sidebar" :class="{ open: sidebarOpen }">
       <RouterLink class="admin-brand" to="/" @click="sidebarOpen = false">
         <span class="brand-mark">S</span>
-        <span><strong>SAVORY</strong><small>ADMIN</small></span>
+        <span><strong>SAVORY</strong><small>HR</small></span>
       </RouterLink>
 
       <nav class="side-nav" aria-label="Admin navigation">
-        <p class="nav-label">Workspace</p>
+        <p class="nav-label">HR workspace</p>
         <RouterLink
-          v-for="item in navItems"
+          v-for="item in visibleNavItems"
           :key="item.path"
           :to="item.path"
           class="nav-item"
@@ -57,10 +108,9 @@ function returnToSite() {
       </nav>
 
       <div class="sidebar-bottom">
-        <RouterLink to="/settings" class="nav-item"><span class="nav-icon icon-settings"></span><span>Settings</span></RouterLink>
         <div class="admin-profile">
-          <div class="avatar">AC</div>
-          <div><strong>Alex Chen</strong><small>Administrator</small></div>
+          <div class="avatar">{{ user.username.slice(0, 2).toUpperCase() }}</div>
+          <div><strong>{{ user.displayName || user.username }}</strong><small>{{ user.roleName }}</small></div>
           <button class="logout-button" aria-label="Log out" title="Log out" @click="logout">↗</button>
         </div>
       </div>
@@ -73,7 +123,7 @@ function returnToSite() {
         <button class="return-site-button" type="button" @click="returnToSite">← Вернуться на сайт</button>
         <button class="mobile-menu" aria-label="Open menu" @click="sidebarOpen = true"><span></span><span></span></button>
         <div>
-          <p>Restaurant overview</p>
+          <p>HR · Restaurant</p>
           <h1>{{ pageTitle }}</h1>
         </div>
         <div class="topbar-actions">
@@ -82,8 +132,7 @@ function returnToSite() {
             <input type="search" placeholder="Search orders..." aria-label="Search orders" />
             <kbd>⌘ K</kbd>
           </label>
-          <button class="notification-button" aria-label="Notifications"><span></span></button>
-          <div class="top-avatar">AC</div>
+          <div class="top-avatar">{{ user.username.slice(0, 2).toUpperCase() }}</div>
         </div>
       </header>
       <RouterView />

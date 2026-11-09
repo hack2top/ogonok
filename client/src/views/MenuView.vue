@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import fallbackImage from '../assets/images/hero.jpg'
 
 const categories = ['All', 'Starters', 'Mains', 'Desserts', 'Drinks']
@@ -48,6 +48,27 @@ function loadMenu() {
 
 const menu = ref(loadMenu())
 const filteredMenu = computed(() => menu.value.filter((item) => item.available !== false && (active.value === 'All' || item.category === active.value)))
+
+let menuRefreshTimer
+async function refreshMenu() {
+  try {
+    const response = await fetch('/api/menu')
+    if (!response.ok) throw new Error('Unable to load current menu.')
+    const sharedMenu = await response.json()
+    if (sharedMenu.length) {
+      menu.value = sharedMenu
+      localStorage.setItem('savory-menu', JSON.stringify(sharedMenu))
+    }
+  } catch (error) {
+    console.error('Unable to refresh menu from the restaurant:', error)
+  }
+}
+
+onMounted(() => {
+  refreshMenu()
+  menuRefreshTimer = window.setInterval(refreshMenu, 5000)
+})
+onBeforeUnmount(() => window.clearInterval(menuRefreshTimer))
 
 function onImageError(event) {
   event.target.onerror = null
