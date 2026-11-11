@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import { languages, locale, setLocale, setTheme, t, theme } from './i18n'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,21 +13,21 @@ const user = ref({
   roleName: '',
 })
 const roleLabels = {
-  creator: 'Создатель',
-  chef: 'Главный шеф',
-  courier: 'Курьер',
-  admin: 'Админ',
-  analyst: 'Аналитик',
+  creator: 'creator',
+  chef: 'chef',
+  courier: 'courier',
+  admin: 'admin',
+  analyst: 'analyst',
 }
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: 'grid' },
-  { path: '/orders', label: 'Orders', icon: 'bag' },
-  { path: '/menu', label: 'Menu', icon: 'menu' },
-  { path: '/reservations', label: 'Reservations', icon: 'calendar' },
-  { path: '/customers', label: 'Customers', icon: 'users' },
-  { path: '/analytics', label: 'Analytics', icon: 'chart' },
-  { path: '/employees', label: 'HR', icon: 'users' },
-  { path: '/settings', label: 'Settings', icon: 'settings' },
+  { path: '/', label: 'dashboard', icon: 'grid' },
+  { path: '/orders', label: 'orders', icon: 'bag' },
+  { path: '/menu', label: 'menu', icon: 'menu' },
+  { path: '/reservations', label: 'reservations', icon: 'calendar' },
+  { path: '/customers', label: 'customers', icon: 'users' },
+  { path: '/analytics', label: 'analytics', icon: 'chart' },
+  { path: '/employees', label: 'hr', icon: 'users' },
+  { path: '/settings', label: 'settings', icon: 'settings' },
 ]
 const limitedRoutes = computed(() => user.value.role === 'chef'
   ? ['/menu', '/orders']
@@ -34,14 +35,14 @@ const limitedRoutes = computed(() => user.value.role === 'chef'
     ? ['/orders']
     : null)
 const visibleNavItems = computed(() => navItems.filter(item => !limitedRoutes.value || limitedRoutes.value.includes(item.path)))
-const pageTitle = computed(() => route.path === '/employees' ? 'HR' : navItems.find(item => item.path === route.path)?.label || 'Dashboard')
+const pageTitle = computed(() => t(navItems.find(item => item.path === route.path)?.label || 'dashboard'))
 
 function updateUser(session) {
   user.value = {
     username: session.username || '',
     displayName: session.displayName || '',
     role: session.role || '',
-    roleName: roleLabels[session.role] || session.roleName || '',
+    roleName: roleLabels[session.role] ? t(roleLabels[session.role]) : session.roleName || '',
   }
 }
 
@@ -104,7 +105,7 @@ function returnToSite() {
       </RouterLink>
 
       <nav class="side-nav" aria-label="Admin navigation">
-        <p class="nav-label">HR workspace</p>
+        <p class="nav-label">{{ t('workspace') }}</p>
         <RouterLink
           v-for="item in visibleNavItems"
           :key="item.path"
@@ -113,7 +114,7 @@ function returnToSite() {
           @click="sidebarOpen = false"
         >
           <span class="nav-icon" :class="`icon-${item.icon}`"></span>
-          <span>{{ item.label }}</span>
+          <span>{{ t(item.label) }}</span>
           <b v-if="item.count">{{ item.count }}</b>
         </RouterLink>
       </nav>
@@ -121,28 +122,35 @@ function returnToSite() {
       <div class="sidebar-bottom">
         <div class="admin-profile">
           <div class="avatar">{{ user.username.slice(0, 2).toUpperCase() }}</div>
-          <div><strong>{{ user.displayName || user.username }}</strong><small>{{ user.roleName }}</small></div>
-          <button class="logout-button" aria-label="Log out" title="Log out" @click="logout">↗</button>
+          <div><strong>{{ user.displayName || user.username }}</strong><small>{{ roleLabels[user.role] ? t(roleLabels[user.role]) : user.roleName }}</small></div>
+          <button class="logout-button" :aria-label="t('logout')" :title="t('logout')" @click="logout">↗</button>
         </div>
       </div>
     </aside>
 
-    <button class="sidebar-backdrop" :class="{ visible: sidebarOpen }" aria-label="Close menu" @click="sidebarOpen = false"></button>
+    <button class="sidebar-backdrop" :class="{ visible: sidebarOpen }" :aria-label="t('closeMenu')" @click="sidebarOpen = false"></button>
 
     <main class="admin-main">
       <header class="topbar">
-        <button class="return-site-button" type="button" @click="returnToSite">← Вернуться на сайт</button>
-        <button class="mobile-menu" aria-label="Open menu" @click="sidebarOpen = true"><span></span><span></span></button>
+        <button class="return-site-button" type="button" @click="returnToSite">{{ t('returnSite') }}</button>
+        <button class="mobile-menu" :aria-label="t('openMenu')" @click="sidebarOpen = true"><span></span><span></span></button>
         <div>
-          <p>HR · Restaurant</p>
+          <p>{{ t('restaurant') }}</p>
           <h1>{{ pageTitle }}</h1>
         </div>
         <div class="topbar-actions">
           <label class="search-box">
             <span></span>
-            <input type="search" placeholder="Search orders..." aria-label="Search orders" />
+            <input type="search" :placeholder="t('search')" :aria-label="t('search')" />
             <kbd>⌘ K</kbd>
           </label>
+          <label class="admin-language">
+            <span class="sr-only">{{ t('language') }}</span>
+            <select :value="locale" :aria-label="t('language')" @change="setLocale($event.target.value)">
+              <option v-for="language in languages" :key="language.value" :value="language.value">{{ language.label }}</option>
+            </select>
+          </label>
+          <button class="admin-theme-toggle" type="button" :aria-label="theme === 'dark' ? t('light') : t('dark')" :title="theme === 'dark' ? t('light') : t('dark')" @click="setTheme(theme === 'dark' ? 'light' : 'dark')">{{ theme === 'dark' ? '☀' : '☾' }}</button>
           <div class="top-avatar">{{ user.username.slice(0, 2).toUpperCase() }}</div>
         </div>
       </header>

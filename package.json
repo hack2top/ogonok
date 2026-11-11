@@ -1,6 +1,12 @@
 {
   "name": "restourant-monorepo",
   "private": true,
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "dependencies": {
+    "mongodb": "^6.18.0"
+  },
   "scripts": {
     "install:all": "npm --prefix client install && npm --prefix admin install",
     "build": "npm run install:all && npm --prefix client run build && npm --prefix admin run build",

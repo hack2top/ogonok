@@ -2,7 +2,7 @@ const { spawn } = require('child_process')
 const path = require('path')
 const http = require('http')
 const fs = require('fs')
-const { handleApi } = require('./shared-api.cjs')
+const { handleApi, connectDatabase } = require('./shared-api.cjs')
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const services = [
@@ -62,33 +62,43 @@ if (process.env.RENDER || process.env.PORT) {
     })
   })
 
-  server.listen(port, '0.0.0.0', () => {
-    console.log(`Restaurant service listening on port ${port}`)
+  connectDatabase().then(() => {
+    server.listen(port, '0.0.0.0', () => {
+      console.log(`Restaurant service listening on port ${port}`)
+    })
+  }).catch((error) => {
+    console.error('Could not connect to the configured database:', error.message)
+    process.exitCode = 1
   })
 } else {
-const apiServer = http.createServer((request, response) => {
-  const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`)
-  handleApi(request, response, url)
-})
-apiServer.listen(5175, '127.0.0.1', () => console.log('Shared data API listening on port 5175'))
-
-const children = services.map((service) => {
-  const child = spawn(npm, ['run', 'dev', '--', '--host', '127.0.0.1', '--port', String(service.port)], {
-    cwd: service.directory,
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
-    env: process.env,
+  const apiServer = http.createServer((request, response) => {
+    const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`)
+    handleApi(request, response, url)
   })
-  child.on('error', (error) => console.error(`${service.name} failed to start:`, error.message))
-  return child
-})
+  connectDatabase().then(() => {
+    apiServer.listen(5175, '127.0.0.1', () => console.log('Shared data API listening on port 5175'))
 
-for (const child of children) {
-  child.on('exit', (code, signal) => {
-    if (!signal) {
-      console.error(`A service stopped with exit code ${code}`)
-      process.exitCode = code || 1
+    const children = services.map((service) => {
+      const child = spawn(npm, ['run', 'dev', '--', '--host', '127.0.0.1', '--port', String(service.port)], {
+        cwd: service.directory,
+        stdio: 'inherit',
+        shell: process.platform === 'win32',
+        env: process.env,
+      })
+      child.on('error', (error) => console.error(`${service.name} failed to start:`, error.message))
+      return child
+    })
+
+    for (const child of children) {
+      child.on('exit', (code, signal) => {
+        if (!signal) {
+          console.error(`A service stopped with exit code ${code}`)
+          process.exitCode = code || 1
+        }
+      })
     }
+  }).catch((error) => {
+    console.error('Could not connect to the configured database:', error.message)
+    process.exitCode = 1
   })
-}
 }

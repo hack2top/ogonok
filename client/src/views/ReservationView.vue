@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import storyImage from '../assets/images/story.jpg'
+import { t } from '../i18n'
 
 let profile = {}
 try { profile = JSON.parse(sessionStorage.getItem('savory-user-profile') || '{}') } catch {}
@@ -53,21 +54,21 @@ async function submitReservation() {
 }
 </script>
 <template>
-  <section class="page-hero"><p class="eyebrow">Join us</p><h1>Reserve a table</h1></section>
+  <section class="page-hero"><p class="eyebrow">{{ t('joinUs') }}</p><h1>{{ t('reserveTable') }}</h1></section>
   <section class="form-page content-wrap">
     <div class="reservation-image" :style="{ backgroundImage: `url(${storyImage})` }"></div>
     <form class="booking-form" @submit.prevent="submitReservation">
-      <h2>Your details</h2>
-      <label>Name<input v-model="name" required type="text" placeholder="Your name" /></label>
-      <label>Email<input v-model="email" required type="email" placeholder="you@example.com" /></label>
-      <label>Phone number<input v-model="phone" required type="tel" placeholder="+998" /></label>
+      <h2>{{ t('details') }}</h2>
+      <label>{{ t('name') }}<input v-model="name" required type="text" :placeholder="t('yourName')" /></label>
+      <label>{{ t('emailLabel') }}<input v-model="email" required type="email" placeholder="you@example.com" /></label>
+      <label>{{ t('phoneNumber') }}<input v-model="phone" required type="tel" placeholder="+998" /></label>
       <div class="form-row">
-        <label>Date<input v-model="date" required type="date" /></label>
-        <label>Time<select v-model="time"><option>18:00</option><option>19:30</option><option>21:00</option></select></label>
+        <label>{{ t('date') }}<input v-model="date" required type="date" /></label>
+        <label>{{ t('time') }}<select v-model="time"><option>18:00</option><option>19:30</option><option>21:00</option></select></label>
       </div>
-      <label>Guests<select v-model="guests"><option>2 guests</option><option>3 guests</option><option>4 guests</option><option>5+ guests</option></select></label>
-      <button class="button" type="submit">Request reservation</button>
-      <p v-if="success" class="checkout-success">Reservation submitted successfully.</p>
+      <label>{{ t('guests') }}<select v-model="guests"><option>2 {{ t('guests') }}</option><option>3 {{ t('guests') }}</option><option>4 {{ t('guests') }}</option><option>5+ {{ t('guests') }}</option></select></label>
+      <button class="button" type="submit">{{ t('requestReservation') }}</button>
+      <p v-if="success" class="checkout-success">{{ t('reservationSuccess') }}</p>
       <p v-if="syncError" class="customer-status-error">{{ syncError }}</p>
     </form>
   </section>

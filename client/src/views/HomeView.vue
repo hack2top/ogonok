@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import { useScrollAnimation } from '../composables/useScrollAnimation'
+import { t } from '../i18n'
 import heroImage from '../assets/images/hero.jpg'
 import storyImage from '../assets/images/story.jpg'
 
@@ -13,9 +14,9 @@ const dishes = [
 ]
 
 const experiences = [
-  { number: '01', title: 'Seasonal ingredients', text: 'Our menu follows the harvest, with produce sourced from growers and producers we know personally.' },
-  { number: '02', title: 'Honest cooking', text: 'We let exceptional ingredients speak for themselves through careful, contemporary techniques.' },
-  { number: '03', title: 'Warm hospitality', text: 'Thoughtful service creates a relaxed room where every guest feels genuinely welcome.' },
+  { number: '01', title: 'seasonalIngredients', text: 'seasonalCopy' },
+  { number: '02', title: 'honestCooking', text: 'honestCopy' },
+  { number: '03', title: 'warmHospitality', text: 'hospitalityCopy' },
 ]
 
 const gallery = [
@@ -29,25 +30,25 @@ const gallery = [
 <template>
   <section class="hero">
     <div class="hero-copy" data-aos="fade-up" data-aos-delay="100">
-      <p class="eyebrow">Seasonal kitchen · Est. 2014</p>
-      <h1>Flavors that<br /><em>bring us together.</em></h1>
-      <p class="hero-text">Modern comfort food, sourced with care and served with heart. Every plate is an invitation to stay a little longer.</p>
+      <p class="eyebrow">{{ t('seasonalKitchen') }}</p>
+      <h1>{{ t('heroTitle') }}<br /><em>{{ t('heroTitleAccent') }}</em></h1>
+      <p class="hero-text">{{ t('heroCopy') }}</p>
       <div class="hero-actions">
-        <RouterLink class="button" to="/menu">Explore our menu</RouterLink>
-        <RouterLink class="text-link" to="/reservation">Reserve a table <span>↗</span></RouterLink>
+        <RouterLink class="button" to="/menu">{{ t('exploreMenu') }}</RouterLink>
+        <RouterLink class="text-link" to="/reservation">{{ t('reserveTable') }} <span>↗</span></RouterLink>
       </div>
     </div>
     <div class="hero-visual" data-aos="zoom-in" data-aos-delay="250">
       <div class="hero-image" :style="{ backgroundImage: `url(${heroImage})` }"></div>
-      <div class="open-card"><span class="status-dot"></span><div><strong>Open today</strong><small>10:00 — 23:00</small></div></div>
-      <div class="rating-card"><strong>4.9</strong><span>★★★★★</span><small>1,200+ reviews</small></div>
+      <div class="open-card"><span class="status-dot"></span><div><strong>{{ t('openToday') }}</strong><small>10:00 — 23:00</small></div></div>
+      <div class="rating-card"><strong>4.9</strong><span>★★★★★</span><small>{{ t('reviews') }}</small></div>
     </div>
   </section>
 
   <section class="featured content-wrap">
     <div class="section-heading" data-reveal>
-      <div><p class="eyebrow">From our kitchen</p><h2>Chef’s favorites</h2></div>
-      <RouterLink class="text-link" to="/menu">View full menu <span>→</span></RouterLink>
+      <div><p class="eyebrow">{{ t('fromKitchen') }}</p><h2>{{ t('chefFavorites') }}</h2></div>
+      <RouterLink class="text-link" to="/menu">{{ t('fullMenu') }} <span>→</span></RouterLink>
     </div>
     <div class="dish-grid">
       <article v-for="(dish, index) in dishes" :key="dish.name" class="dish-card" data-aos="zoom-in" :data-aos-delay="String(index * 120)">
@@ -60,37 +61,37 @@ const gallery = [
   <section class="story">
     <div class="story-image" data-aos="reveal-left" :style="{ backgroundImage: `url(${storyImage})` }"></div>
     <div class="story-copy" data-aos="fade-left">
-      <p class="eyebrow">Our philosophy</p>
-      <h2>Simple ingredients,<br /><em>extraordinary moments.</em></h2>
-      <p>For more than a decade, Savory has brought people together over thoughtful food, generous plates, and genuine hospitality. We cook with the rhythm of the seasons and work closely with local growers, fishermen, and artisan makers.</p>
-      <RouterLink class="text-link" to="/menu">Discover our menu <span>→</span></RouterLink>
+      <p class="eyebrow">{{ t('philosophy') }}</p>
+      <h2>{{ t('simpleIngredients') }}<br /><em>{{ t('extraordinaryMoments') }}</em></h2>
+      <p>{{ t('ourStory') }}</p>
+      <RouterLink class="text-link" to="/menu">{{ t('discoverMenu') }} <span>→</span></RouterLink>
     </div>
   </section>
 
   <section class="experience content-wrap">
     <div class="section-heading" data-reveal>
-      <div><p class="eyebrow">The Savory experience</p><h2>Made for good company</h2></div>
-      <p class="section-note">Lunch, long dinners, celebrations, or a quiet glass at the bar—every table is treated with the same care.</p>
+      <div><p class="eyebrow">{{ t('experience') }}</p><h2>{{ t('goodCompany') }}</h2></div>
+      <p class="section-note">{{ t('experienceCopy') }}</p>
     </div>
     <div class="experience-grid">
       <article v-for="(item, index) in experiences" :key="item.number" data-aos="fade-up" :data-aos-delay="String(index * 100)">
         <span>{{ item.number }}</span>
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.text }}</p>
+        <h3>{{ t(item.title) }}</h3>
+        <p>{{ t(item.text) }}</p>
       </article>
     </div>
   </section>
 
   <section class="stats-strip">
-    <div data-aos="zoom-in"><strong>12+</strong><span>Years of hospitality</span></div>
-    <div data-aos="zoom-in"><strong>30</strong><span>Seasonal dishes</span></div>
-    <div data-aos="zoom-in"><strong>18</strong><span>Local partners</span></div>
-    <div data-aos="zoom-in"><strong>4.9</strong><span>Guest rating</span></div>
+    <div data-aos="zoom-in"><strong>12+</strong><span>{{ t('yearsHospitality') }}</span></div>
+    <div data-aos="zoom-in"><strong>30</strong><span>{{ t('seasonalDishes') }}</span></div>
+    <div data-aos="zoom-in"><strong>18</strong><span>{{ t('localPartners') }}</span></div>
+    <div data-aos="zoom-in"><strong>4.9</strong><span>{{ t('guestRating') }}</span></div>
   </section>
 
   <section class="gallery-section content-wrap">
     <div class="section-heading" data-reveal>
-      <div><p class="eyebrow">Around our table</p><h2>A glimpse of Savory</h2></div>
+      <div><p class="eyebrow">{{ t('aroundTable') }}</p><h2>{{ t('glimpse') }}</h2></div>
     </div>
     <div class="gallery-grid">
       <figure v-for="(image, index) in gallery" :key="image" :class="`gallery-${index + 1}`" data-aos="zoom-in" :data-aos-delay="String(index * 100)">
@@ -100,13 +101,13 @@ const gallery = [
   </section>
 
   <section class="testimonial" data-aos="fade-up">
-    <p class="eyebrow">Guest story</p>
-    <blockquote>“A room full of warmth, dishes with real personality, and service that makes you want to return.”</blockquote>
+    <p class="eyebrow">{{ t('guestStory') }}</p>
+    <blockquote>{{ t('testimonial') }}</blockquote>
     <p>— Maya R. · Local Guide</p>
   </section>
 
   <section class="reservation-cta">
-    <div data-aos="fade-left"><p class="eyebrow">Your table is waiting</p><h2>Come dine with us</h2><p>Open daily for lunch and dinner. Walk-ins are welcome, while reservations are recommended for evenings and weekends.</p></div>
-    <RouterLink class="button" to="/reservation" data-aos="zoom-in">Reserve a table</RouterLink>
+    <div data-aos="fade-left"><p class="eyebrow">{{ t('tableWaiting') }}</p><h2>{{ t('dineWithUs') }}</h2><p>{{ t('hoursCopy') }}</p></div>
+    <RouterLink class="button" to="/reservation" data-aos="zoom-in">{{ t('reserveTable') }}</RouterLink>
   </section>
 </template>

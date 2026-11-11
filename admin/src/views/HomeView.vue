@@ -1,11 +1,12 @@
 <script setup>
 import { ref } from 'vue'
+import { t } from '../i18n'
 
 const stats = [
-  { label: 'Total revenue', value: '$24,890', change: '+12.5%', tone: 'green', icon: '$' },
-  { label: 'Orders', value: '348', change: '+8.2%', tone: 'orange', icon: '◇' },
-  { label: 'Reservations', value: '86', change: '+5.4%', tone: 'blue', icon: '□' },
-  { label: 'Avg. order value', value: '$71.52', change: '-1.8%', tone: 'red', icon: '↗' },
+  { label: 'totalRevenue', value: '$24,890', change: '+12.5%', tone: 'green', icon: '$' },
+  { label: 'orders', value: '348', change: '+8.2%', tone: 'orange', icon: '◇' },
+  { label: 'reservations', value: '86', change: '+5.4%', tone: 'blue', icon: '□' },
+  { label: 'avgOrder', value: '$71.52', change: '-1.8%', tone: 'red', icon: '↗' },
 ]
 
 const orders = ref([
@@ -29,7 +30,7 @@ const reservations = [
       <article v-for="stat in stats" :key="stat.label" class="stat-card">
         <div class="stat-icon" :class="stat.tone">{{ stat.icon }}</div>
         <div class="stat-content">
-          <p>{{ stat.label }}</p>
+          <p>{{ t(stat.label) }}</p>
           <div><strong>{{ stat.value }}</strong><span>{{ stat.change }}</span></div>
         </div>
       </article>
@@ -38,8 +39,8 @@ const reservations = [
     <section class="dashboard-grid">
       <article class="panel revenue-panel">
         <div class="panel-heading">
-          <div><p>Revenue</p><strong>$24,890</strong></div>
-          <select aria-label="Revenue period"><option>Last 7 days</option><option>Last 30 days</option></select>
+          <div><p>{{ t('revenue') }}</p><strong>$24,890</strong></div>
+          <select :aria-label="t('revenue')"><option>{{ t('last7') }}</option><option>{{ t('last30') }}</option></select>
         </div>
         <div class="chart" aria-label="Weekly revenue chart">
           <div class="chart-lines"><i></i><i></i><i></i><i></i></div>
@@ -53,7 +54,7 @@ const reservations = [
       </article>
 
       <article class="panel popular-panel">
-        <div class="panel-heading"><div><p>Popular dishes</p><strong>Top items</strong></div><button>View all</button></div>
+        <div class="panel-heading"><div><p>{{ t('popularDishes') }}</p><strong>{{ t('topItems') }}</strong></div><button>{{ t('viewAll') }}</button></div>
         <div class="popular-list">
           <div><img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=160&q=80" alt="" /><div><strong>Truffle pasta</strong><small>126 orders</small></div><b>$18</b></div>
           <div><img src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=160&q=80" alt="" /><div><strong>Garden burrata</strong><small>98 orders</small></div><b>$16</b></div>
@@ -64,13 +65,13 @@ const reservations = [
 
     <section class="dashboard-grid lower-grid">
       <article class="panel orders-panel">
-        <div class="panel-heading"><div><p>Recent orders</p><strong>Live activity</strong></div><button>View all</button></div>
+        <div class="panel-heading"><div><p>{{ t('recentOrders') }}</p><strong>{{ t('liveActivity') }}</strong></div><button>{{ t('viewAll') }}</button></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr></thead>
+            <thead><tr><th>{{ t('order') }}</th><th>{{ t('customer') }}</th><th>{{ t('items') }}</th><th>{{ t('total') }}</th><th>{{ t('status') }}</th></tr></thead>
             <tbody>
               <tr v-for="order in orders" :key="order.id">
-                <td><strong>{{ order.id }}</strong><small>{{ order.time }}</small></td><td>{{ order.customer }}</td><td>{{ order.items }}</td><td>{{ order.amount }}</td><td><span class="status" :class="order.status.toLowerCase()">{{ order.status }}</span></td>
+                <td><strong>{{ order.id }}</strong><small>{{ order.time }}</small></td><td>{{ order.customer }}</td><td>{{ order.items }}</td><td>{{ order.amount }}</td><td><span class="status" :class="order.status.toLowerCase()">{{ t(order.status.toLowerCase()) }}</span></td>
               </tr>
             </tbody>
           </table>
@@ -78,10 +79,10 @@ const reservations = [
       </article>
 
       <article class="panel reservation-panel">
-        <div class="panel-heading"><div><p>Reservations</p><strong>Tonight</strong></div><button>Manage</button></div>
+        <div class="panel-heading"><div><p>{{ t('reservations') }}</p><strong>{{ t('tonight') }}</strong></div><button>{{ t('manage') }}</button></div>
         <div class="reservation-list">
           <div v-for="reservation in reservations" :key="reservation.time">
-            <strong>{{ reservation.time }}</strong><div><b>{{ reservation.name }}</b><small>{{ reservation.guests }} guests · {{ reservation.table }}</small></div><button aria-label="Reservation options">•••</button>
+            <strong>{{ reservation.time }}</strong><div><b>{{ reservation.name }}</b><small>{{ reservation.guests }} {{ t('guests') }} · {{ reservation.table }}</small></div><button aria-label="Reservation options">•••</button>
           </div>
         </div>
       </article>

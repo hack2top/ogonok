@@ -3,3 +3,6 @@ dist/
 .env
 *.log
 restaurant-data.json
+restaurant-data.sqlite
+restaurant-data.sqlite-shm
+restaurant-data.sqlite-wal

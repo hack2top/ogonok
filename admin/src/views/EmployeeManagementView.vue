@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue'
+import { t } from '../i18n'
 
 const employees = ref([])
 const loading = ref(true)
@@ -9,10 +10,10 @@ const currentRole = sessionStorage.getItem('savory-admin-role')
 const canManageEmployees = ['creator', 'admin', 'analyst'].includes(currentRole)
 const canAddEmployees = ['creator', 'admin'].includes(currentRole)
 const roles = [
-  { value: 'chef', label: 'Главный шеф' },
-  { value: 'courier', label: 'Курьер' },
-  { value: 'admin', label: 'Админ' },
-  { value: 'analyst', label: 'Аналитик' },
+  { value: 'chef', label: 'chef' },
+  { value: 'courier', label: 'courier' },
+  { value: 'admin', label: 'admin' },
+  { value: 'analyst', label: 'analyst' },
 ]
 const newEmployee = ref({ username: '', displayName: '', password: '', role: 'chef' })
 const edits = ref({})
@@ -84,7 +85,7 @@ async function updateEmployee(employee) {
 }
 
 async function removeEmployee(employee) {
-  if (!window.confirm(`Удалить сотрудника «${employee.displayName}» (${employee.username})?`)) return
+  if (!window.confirm(`${t('confirmDelete')} «${employee.displayName}» (${employee.username})?`)) return
   error.value = ''
   try {
     const response = await fetch(`/api/employees/${encodeURIComponent(employee.username)}`, { method: 'DELETE' })
@@ -103,26 +104,26 @@ onMounted(loadEmployees)
 <template>
   <section class="management-page">
     <div class="hr-page-heading">
-      <div><p>HR</p><h2>Сотрудники и доступы</h2></div>
-      <span>{{ employees.length }} сотрудников</span>
+      <div><p>{{ t('hr') }}</p><h2>{{ t('employeesAccess') }}</h2></div>
+      <span>{{ employees.length }} {{ t('employeeCount') }}</span>
     </div>
 
     <p v-if="error" class="hr-error" role="alert">{{ error }}</p>
-    <p v-if="!canManageEmployees" class="hr-readonly-note">У вас доступ только для просмотра списка сотрудников.</p>
-    <p v-else-if="!canAddEmployees" class="hr-readonly-note">Аналитик может изменять и удалять сотрудников, но не может добавлять новых.</p>
+    <p v-if="!canManageEmployees" class="hr-readonly-note">{{ t('readOnlyEmployees') }}</p>
+    <p v-else-if="!canAddEmployees" class="hr-readonly-note">{{ t('analystPermission') }}</p>
 
     <form v-if="canAddEmployees" class="hr-add-form panel" @submit.prevent="addEmployee">
-      <div class="panel-heading"><div><p>Новый сотрудник</p><strong>Создать учетную запись</strong></div></div>
+      <div class="panel-heading"><div><p>{{ t('newEmployee') }}</p><strong>{{ t('createAccount') }}</strong></div></div>
       <div class="hr-form-grid">
-        <label>Имя<input v-model="newEmployee.displayName" required maxlength="80" placeholder="Имя и фамилия" /></label>
-        <label>Логин<input v-model="newEmployee.username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9._\-]+" autocomplete="off" placeholder="Уникальный логин" /></label>
-        <label>Пароль<input v-model="newEmployee.password" required minlength="8" type="password" autocomplete="new-password" placeholder="Не менее 8 символов" /></label>
-        <label>Роль<select v-model="newEmployee.role"><option v-for="role in roles" :key="role.value" :value="role.value">{{ role.label }}</option></select></label>
-        <button class="primary-button" type="submit" :disabled="saving">Добавить сотрудника</button>
+        <label>{{ t('name') }}<input v-model="newEmployee.displayName" required maxlength="80" :placeholder="t('fullName')" /></label>
+        <label>{{ t('login') }}<input v-model="newEmployee.username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9._\-]+" autocomplete="off" /></label>
+        <label>{{ t('password') }}<input v-model="newEmployee.password" required minlength="8" type="password" autocomplete="new-password" /></label>
+        <label>{{ t('role') }}<select v-model="newEmployee.role"><option v-for="role in roles" :key="role.value" :value="role.value">{{ t(role.label) }}</option></select></label>
+        <button class="primary-button" type="submit" :disabled="saving">{{ t('addEmployee') }}</button>
       </div>
     </form>
 
-    <div v-if="loading" class="hr-readonly-note">Загружаем сотрудников…</div>
+    <div v-if="loading" class="hr-readonly-note">{{ t('loadingEmployees') }}</div>
     <div v-else class="hr-employee-list">
       <article v-for="employee in employees" :key="employee.username" class="hr-employee-card panel">
         <div class="hr-employee-identity">
@@ -130,17 +131,17 @@ onMounted(loadEmployees)
           <div><strong>{{ employee.displayName }}</strong><small>@{{ employee.username }}</small></div>
         </div>
         <template v-if="canManageEmployees">
-          <label>Имя<input v-model="edits[employee.username].displayName" required maxlength="80" /></label>
-          <label>Роль<select v-model="edits[employee.username].role"><option v-for="role in roles" :key="role.value" :value="role.value">{{ role.label }}</option></select></label>
-          <label>Новый пароль<input v-model="edits[employee.username].password" minlength="8" type="password" autocomplete="new-password" placeholder="Оставьте пустым без изменений" /></label>
+          <label>{{ t('name') }}<input v-model="edits[employee.username].displayName" required maxlength="80" /></label>
+          <label>{{ t('role') }}<select v-model="edits[employee.username].role"><option v-for="role in roles" :key="role.value" :value="role.value">{{ t(role.label) }}</option></select></label>
+          <label>{{ t('newPassword') }}<input v-model="edits[employee.username].password" minlength="8" type="password" autocomplete="new-password" :placeholder="t('leaveBlank')" /></label>
           <div class="hr-employee-actions">
-            <button class="primary-button" type="button" :disabled="saving" @click="updateEmployee(employee)">Сохранить</button>
-            <button class="secondary-button danger-button" type="button" :disabled="saving" @click="removeEmployee(employee)">Удалить</button>
+            <button class="primary-button" type="button" :disabled="saving" @click="updateEmployee(employee)">{{ t('save') }}</button>
+            <button class="secondary-button danger-button" type="button" :disabled="saving" @click="removeEmployee(employee)">{{ t('remove') }}</button>
           </div>
         </template>
-        <span v-else class="hr-role-badge">{{ employee.roleName }}</span>
+        <span v-else class="hr-role-badge">{{ t(employee.role) }}</span>
       </article>
-      <p v-if="!employees.length && !error" class="hr-readonly-note">Сотрудников пока нет.</p>
+      <p v-if="!employees.length && !error" class="hr-readonly-note">{{ t('noEmployees') }}</p>
     </div>
   </section>
 </template>

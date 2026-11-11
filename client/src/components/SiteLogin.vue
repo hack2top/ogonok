@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { t } from '../i18n'
 
 defineProps({ show: Boolean })
 const emit = defineEmits(['contact-collected', 'close'])
@@ -23,13 +24,13 @@ function submit() {
 <template>
   <div v-if="show" class="site-login-overlay" role="dialog" aria-modal="true" aria-labelledby="site-login-title">
     <form class="site-login-card" @submit.prevent="submit">
-      <button class="site-login-close" type="button" aria-label="Закрыть" @click="emit('close')">×</button>
-      <div class="login-brand-small"><span>S</span><div><strong>SAVORY</strong><small>ORDER CONTACT</small></div></div>
-      <p class="site-login-eyebrow">Контактные данные</p>
-      <h1 id="site-login-title">Для оформления заказа</h1>
-      <label>E-mail<input v-model="email" type="email" autocomplete="email" required autofocus placeholder="name@example.com" /></label>
-      <label>Номер телефона<input v-model="phone" type="tel" autocomplete="tel" required placeholder="+998 90 123 45 67" /></label>
-      <button class="site-login-button" type="submit">Продолжить</button>
+      <button class="site-login-close" type="button" :aria-label="t('closeMenu')" @click="emit('close')">×</button>
+      <div class="login-brand-small"><span>S</span><div><strong>SAVORY</strong><small>{{ t('orderContact') }}</small></div></div>
+      <p class="site-login-eyebrow">{{ t('contactDetails') }}</p>
+      <h1 id="site-login-title">{{ t('orderContactTitle') }}</h1>
+      <label>{{ t('emailLabel') }}<input v-model="email" type="email" autocomplete="email" required autofocus placeholder="name@example.com" /></label>
+      <label>{{ t('phoneNumber') }}<input v-model="phone" type="tel" autocomplete="tel" required placeholder="+998 90 123 45 67" /></label>
+      <button class="site-login-button" type="submit">{{ t('continue') }}</button>
     </form>
   </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink } from 'vue-router'
+import { t } from '../i18n'
 </script>
 <template>
-  <section class="not-found"><p>404</p><h1>Table not found</h1><RouterLink class="button" to="/">Return home</RouterLink></section>
+  <section class="not-found"><p>404</p><h1>{{ t('notFound') }}</h1><RouterLink class="button" to="/">{{ t('returnHome') }}</RouterLink></section>
 </template>

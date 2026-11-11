@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { seedOrders, seedReservations } from '../data/adminData'
+import { locale, t } from '../i18n'
 
 const route = useRoute()
 const section = computed(() => route.path)
@@ -162,18 +163,18 @@ initializeSharedData().then(() => {
   <div class="management-page">
     <template v-if="section === '/orders'">
       <div class="management-toolbar">
-        <label class="management-search"><span>⌕</span><input v-model="orderSearch" type="search" placeholder="Search orders or customers..." /></label>
-        <div class="filter-buttons"><button v-for="status in ['All', ...orderStatuses]" :key="status" :class="{ active: orderStatus === status }" @click="orderStatus = status">{{ status }}</button></div>
+        <label class="management-search"><span>⌕</span><input v-model="orderSearch" type="search" :placeholder="t('searchOrdersCustomers')" /></label>
+        <div class="filter-buttons"><button v-for="status in ['All', ...orderStatuses]" :key="status" :class="{ active: orderStatus === status }" @click="orderStatus = status">{{ t(status === 'All' ? 'all' : status.toLowerCase()) }}</button></div>
       </div>
       <div class="panel data-panel">
-        <div class="panel-heading"><div><p>All activity</p><strong>{{ filteredOrders.length }} orders</strong></div></div>
+        <div class="panel-heading"><div><p>{{ t('allActivity') }}</p><strong>{{ filteredOrders.length }} {{ t('orders').toLowerCase() }}</strong></div></div>
         <div class="table-wrap">
           <table class="management-table">
-            <thead><tr><th>Order</th><th>Customer</th><th>Date & time</th><th>Type</th><th>Items</th><th>Total</th><th>Status</th></tr></thead>
+            <thead><tr><th>{{ t('order') }}</th><th>{{ t('customer') }}</th><th>{{ t('dateTime') }}</th><th>{{ t('type') }}</th><th>{{ t('items') }}</th><th>{{ t('total') }}</th><th>{{ t('status') }}</th></tr></thead>
             <tbody>
               <tr v-for="order in filteredOrders" :key="order.id">
-                <td><strong>{{ order.id }}</strong></td><td><b>{{ order.customer }}</b><small>{{ order.phone }}</small><small>{{ order.email || 'No email' }}</small></td><td>{{ order.date }}<small>{{ order.time }}</small></td><td>{{ order.type }}</td><td><b>{{ order.itemNames || order.items }}</b></td><td><strong>{{ formatMoney(order.amount) }}</strong></td>
-                <td><select class="status-select" :value="order.status" :disabled="!canEditOrders" @change="changeOrderStatus(order, $event.target.value)"><option v-for="status in orderStatuses" :key="status">{{ status }}</option></select></td>
+                <td><strong>{{ order.id }}</strong></td><td><b>{{ order.customer }}</b><small>{{ order.phone }}</small><small>{{ order.email || t('noEmail') }}</small></td><td>{{ order.date }}<small>{{ order.time }}</small></td><td>{{ order.type }}</td><td><b>{{ order.itemNames || order.items }}</b></td><td><strong>{{ formatMoney(order.amount) }}</strong></td>
+                <td><select class="status-select" :value="order.status" :disabled="!canEditOrders" @change="changeOrderStatus(order, $event.target.value)"><option v-for="status in orderStatuses" :key="status" :value="status">{{ t(status.toLowerCase()) }}</option></select></td>
               </tr>
             </tbody>
           </table>
@@ -183,50 +184,50 @@ initializeSharedData().then(() => {
 
     <template v-else-if="section === '/reservations'">
       <div class="management-toolbar">
-        <label class="management-search"><span>⌕</span><input v-model="reservationSearch" type="search" placeholder="Search customer..." /></label>
-        <label class="date-filter"><span>Date</span><input v-model="selectedDate" type="date" /></label>
+        <label class="management-search"><span>⌕</span><input v-model="reservationSearch" type="search" :placeholder="t('searchCustomer')" /></label>
+        <label class="date-filter"><span>{{ t('date') }}</span><input v-model="selectedDate" type="date" /></label>
       </div>
       <div class="reservation-summary">
-        <div><span>Today</span><strong>4</strong></div><div><span>Upcoming</span><strong>{{ reservations.length }}</strong></div><div><span>Guests</span><strong>{{ reservations.reduce((sum, item) => sum + item.guests, 0) }}</strong></div><div><span>Pending</span><strong>{{ reservations.filter(item => item.status === 'Pending').length }}</strong></div>
+        <div><span>{{ t('today') }}</span><strong>4</strong></div><div><span>{{ t('upcoming') }}</span><strong>{{ reservations.length }}</strong></div><div><span>{{ t('guests') }}</span><strong>{{ reservations.reduce((sum, item) => sum + item.guests, 0) }}</strong></div><div><span>{{ t('pending') }}</span><strong>{{ reservations.filter(item => item.status === 'Pending').length }}</strong></div>
       </div>
       <div class="reservation-calendar">
         <article v-for="item in filteredReservations" :key="item.id" class="reservation-card">
           <div class="reservation-date"><strong>{{ new Date(item.date).toLocaleDateString(undefined, { day: '2-digit' }) }}</strong><span>{{ new Date(item.date).toLocaleDateString(undefined, { month: 'short' }) }}</span></div>
-          <div class="reservation-details"><p>{{ item.time }} · {{ item.table }}</p><h3>{{ item.customer }}</h3><small>{{ item.guests }} guests · {{ item.phone }}</small><small>{{ item.email || 'No email' }}</small></div>
-          <select class="status-select" :value="item.status" @change="changeReservationStatus(item, $event.target.value)"><option>Pending</option><option>Confirmed</option><option>Seated</option><option>Completed</option><option>Cancelled</option></select>
+          <div class="reservation-details"><p>{{ item.time }} · {{ item.table }}</p><h3>{{ item.customer }}</h3><small>{{ item.guests }} {{ t('guests') }} · {{ item.phone }}</small><small>{{ item.email || t('noEmail') }}</small></div>
+          <select class="status-select" :value="item.status" @change="changeReservationStatus(item, $event.target.value)"><option value="Pending">{{ t('pending') }}</option><option value="Confirmed">{{ t('confirmed') }}</option><option value="Seated">{{ t('seated') }}</option><option value="Completed">{{ t('completed') }}</option><option value="Cancelled">{{ t('cancelled') }}</option></select>
         </article>
       </div>
     </template>
 
     <template v-else-if="section === '/customers'">
-      <div class="management-toolbar"><label class="management-search"><span>⌕</span><input v-model="customerSearch" type="search" placeholder="Search customers..." /></label></div>
+      <div class="management-toolbar"><label class="management-search"><span>⌕</span><input v-model="customerSearch" type="search" :placeholder="t('searchCustomers')" /></label></div>
       <div class="customer-grid">
         <article v-for="customer in filteredCustomers" :key="customer.name" class="customer-card">
           <div class="customer-avatar">{{ customer.name.split(' ').map(part => part[0]).join('').slice(0, 2) }}</div>
-          <div><h3>{{ customer.name }}</h3><p>{{ customer.phone }}</p><p>{{ customer.email || 'No email' }}</p></div>
-          <dl><div><dt>Orders</dt><dd>{{ customer.orders }}</dd></div><div><dt>Spent</dt><dd>{{ formatMoney(customer.spent) }}</dd></div><div><dt>Last visit</dt><dd>{{ customer.lastOrder }}</dd></div></dl>
+          <div><h3>{{ customer.name }}</h3><p>{{ customer.phone }}</p><p>{{ customer.email || t('noEmail') }}</p></div>
+          <dl><div><dt>{{ t('orders') }}</dt><dd>{{ customer.orders }}</dd></div><div><dt>{{ t('spent') }}</dt><dd>{{ formatMoney(customer.spent) }}</dd></div><div><dt>{{ t('lastVisit') }}</dt><dd>{{ customer.lastOrder }}</dd></div></dl>
         </article>
       </div>
     </template>
 
     <template v-else-if="section === '/analytics'">
       <div class="analytics-grid">
-        <article class="metric-card"><p>Gross revenue</p><strong>$24,890</strong><span>+12.5% this week</span></article>
-        <article class="metric-card"><p>Total orders</p><strong>348</strong><span>+8.2% this week</span></article>
-        <article class="metric-card"><p>Reservations</p><strong>86</strong><span>+5.4% this week</span></article>
-        <article class="metric-card"><p>Repeat customers</p><strong>42%</strong><span>+3.1% this week</span></article>
+        <article class="metric-card"><p>{{ t('grossRevenue') }}</p><strong>$24,890</strong><span>+12.5% {{ t('thisWeek') }}</span></article>
+        <article class="metric-card"><p>{{ t('totalOrders') }}</p><strong>348</strong><span>+8.2% {{ t('thisWeek') }}</span></article>
+        <article class="metric-card"><p>{{ t('reservations') }}</p><strong>86</strong><span>+5.4% {{ t('thisWeek') }}</span></article>
+        <article class="metric-card"><p>{{ t('repeatCustomers') }}</p><strong>42%</strong><span>+3.1% {{ t('thisWeek') }}</span></article>
       </div>
-      <div class="panel analytics-panel"><div class="panel-heading"><div><p>Revenue overview</p><strong>November 2026</strong></div></div><div class="analytics-bars"><div v-for="(value, index) in [42,58,51,72,64,88,76]" :key="index"><span :style="{ height: value + '%' }"></span><small>{{ ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][index] }}</small></div></div></div>
+      <div class="panel analytics-panel"><div class="panel-heading"><div><p>{{ t('revenueOverview') }}</p><strong>November 2026</strong></div></div><div class="analytics-bars"><div v-for="(value, index) in [42,58,51,72,64,88,76]" :key="index"><span :style="{ height: value + '%' }"></span><small>{{ (locale === 'ru' ? ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'] : locale === 'uz' ? ['Du','Se','Ch','Pa','Ju','Sh','Ya'] : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])[index] }}</small></div></div></div>
     </template>
 
     <template v-else-if="section === '/settings'">
       <form class="settings-form panel" @submit.prevent="saveSettings">
-        <div class="panel-heading"><div><p>Restaurant profile</p><strong>General settings</strong></div></div>
+        <div class="panel-heading"><div><p>{{ t('restaurantProfile') }}</p><strong>{{ t('generalSettings') }}</strong></div></div>
         <div class="settings-fields">
-          <label>Restaurant name<input v-model="settings.name" /></label><label>Phone<input v-model="settings.phone" /></label><label>Email<input v-model="settings.email" type="email" /></label><label>Address<input v-model="settings.address" /></label>
-          <label>Opening time<input v-model="settings.opening" type="time" /></label><label>Closing time<input v-model="settings.closing" type="time" /></label>
+          <label>{{ t('restaurantName') }}<input v-model="settings.name" /></label><label>{{ t('phone') }}<input v-model="settings.phone" /></label><label>{{ t('email') }}<input v-model="settings.email" type="email" /></label><label>{{ t('address') }}<input v-model="settings.address" /></label>
+          <label>{{ t('openingTime') }}<input v-model="settings.opening" type="time" /></label><label>{{ t('closingTime') }}<input v-model="settings.closing" type="time" /></label>
         </div>
-        <div class="settings-actions"><button class="primary-button" type="submit">Save changes</button></div>
+        <div class="settings-actions"><button class="primary-button" type="submit">{{ t('saveChanges') }}</button></div>
       </form>
     </template>
   </div>

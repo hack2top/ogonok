@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import fallbackImage from '../assets/images/hero.jpg'
+import { t } from '../i18n'
 
 const categories = ['All', 'Starters', 'Mains', 'Desserts', 'Drinks']
 const active = ref('All')
@@ -89,23 +90,23 @@ function addToCart(item) {
   })
   localStorage.setItem('savory-cart', JSON.stringify(cart))
   window.dispatchEvent(new Event('savory-cart-updated'))
-  window.alert(`${item.name} added to your cart.`)
+  window.alert(`${item.name} ${t('itemAdded')}`)
 }
 </script>
 
 <template>
-  <section class="page-hero"><p class="eyebrow">Savory kitchen</p><h1>Our menu</h1><p class="menu-intro">Seasonal ingredients, thoughtful preparation, and flavors made to share.</p></section>
+  <section class="page-hero"><p class="eyebrow">{{ t('seasonalKitchen') }}</p><h1>{{ t('ourMenu') }}</h1><p class="menu-intro">{{ t('menuIntro') }}</p></section>
   <section class="menu-section content-wrap">
     <div class="menu-toolbar">
       <div class="category-tabs">
-        <button v-for="category in categories" :key="category" :class="{ active: active === category }" @click="active = category">{{ category }}</button>
+        <button v-for="category in categories" :key="category" :class="{ active: active === category }" @click="active = category">{{ t(category.toLowerCase()) }}</button>
       </div>
-      <p>{{ filteredMenu.length }} dishes</p>
+      <p>{{ filteredMenu.length }} {{ t('dishes') }}</p>
     </div>
     <div class="menu-grid">
       <article v-for="item in filteredMenu" :key="item.name" class="menu-card">
         <img :src="item.image || fallbackImage" :alt="item.name" loading="lazy" @error="onImageError" />
-        <div><p class="menu-category">{{ item.category }}</p><h3>{{ item.name }}</h3><p>{{ item.description }}</p><strong>{{ item.price }}</strong><button class="menu-add-button" type="button" @click="addToCart(item)">Add to order</button></div>
+        <div><p class="menu-category">{{ item.category }}</p><h3>{{ item.name }}</h3><p>{{ item.description }}</p><strong>{{ item.price }}</strong><button class="menu-add-button" type="button" @click="addToCart(item)">{{ t('addOrder') }}</button></div>
       </article>
     </div>
   </section>

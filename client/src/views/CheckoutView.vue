@@ -1,6 +1,7 @@
 <script setup>
 import { inject, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { t } from '../i18n'
 
 const router = useRouter()
 const requestContactDetails = inject('requestContactDetails')
@@ -63,12 +64,12 @@ async function placeOrderWithContact() {
 </script>
 <template>
   <section class="simple-page content-wrap">
-    <p class="eyebrow">Final step</p><h1>Checkout</h1>
+    <p class="eyebrow">{{ t('finalStep') }}</p><h1>{{ t('checkout') }}</h1>
     <form class="checkout-form booking-form" @submit.prevent="placeOrder">
-      <label>Delivery address<input v-model="address" required placeholder="Street, building, apartment" /></label>
-      <label>Payment method<select v-model="payment"><option>Cash on delivery</option><option>Card</option></select></label>
-      <button class="button" type="submit">Place order</button>
-      <p v-if="success" class="checkout-success">Order placed successfully. Opening order tracking...</p>
+      <label>{{ t('deliveryAddress') }}<input v-model="address" required :placeholder="t('addressPlaceholder')" /></label>
+      <label>{{ t('paymentMethod') }}<select v-model="payment"><option value="Cash on delivery">{{ t('cashOnDelivery') }}</option><option value="Card">{{ t('card') }}</option></select></label>
+      <button class="button" type="submit">{{ t('placeOrder') }}</button>
+      <p v-if="success" class="checkout-success">{{ t('orderSuccess') }}</p>
       <p v-if="syncError" class="customer-status-error">{{ syncError }}</p>
     </form>
   </section>
