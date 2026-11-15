@@ -39,6 +39,8 @@ The shared API stores orders, reservations, employees, and menu data in MongoDB 
    `MONGODB_DB` is optional; when omitted, the database name in the connection string is used.
 4. Save the settings and redeploy. The server connects before accepting requests and logs the database name after a successful connection. If the connection fails, startup fails instead of silently switching back to SQLite.
 
+Hosted deployments refuse to start without `MONGODB_URI`, so production data cannot silently fall back to an ephemeral local SQLite file. After startup, `https://<your-service>/api/health` reports `"database":"mongodb"` when Atlas is active.
+
 When Atlas is first configured, existing SQLite orders, reservations, employees, and menu entries are imported without replacing documents already present in Atlas. The SQLite database is retained as a local copy.
 
 ### SQLite fallback
@@ -54,8 +56,7 @@ If `RESTAURANT_DATA_FILE` points to an existing legacy JSON file, the server imp
 ## Build
 
 ```powershell
-npm --prefix client install
-npm --prefix client run build
-npm --prefix admin install
-npm --prefix admin run build
+npm run build
 ```
+
+This installs the shared API dependencies as well as the client and admin dependencies, then builds both frontends.

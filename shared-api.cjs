@@ -275,7 +275,12 @@ async function migrateSqliteToMongo(collections) {
 }
 
 async function connectDatabase() {
-  if (!process.env.MONGODB_URI) return
+  if (!process.env.MONGODB_URI) {
+    if (process.env.RENDER || process.env.PORT) {
+      throw new Error('MONGODB_URI is required in hosted environments; refusing to use local SQLite.')
+    }
+    return
+  }
   if (connectionPromise) return connectionPromise
 
   connectionPromise = (async () => {
@@ -474,6 +479,10 @@ async function handleApi(request, response, url) {
   } catch (error) {
     console.error('Database connection error:', error.message)
     sendJson(response, 503, { error: 'Database is unavailable.' })
+    return true
+  }
+  if (pathname === '/api/health' && request.method === 'GET') {
+    sendJson(response, 200, { status: 'ok', database: mongoClient ? 'mongodb' : 'sqlite' })
     return true
   }
   const adminSession = await getAdminSession(request)
