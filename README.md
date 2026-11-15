@@ -36,7 +36,7 @@ The shared API stores orders, reservations, employees, and menu data in MongoDB 
    MONGODB_DB=<optional-database-name>
    ```
 
-   `MONGODB_DB` is optional; when omitted, the database name in the connection string is used.
+   `MONGODB_DB` is optional; when omitted, the API uses the `ogonok` database.
 4. Save the settings and redeploy. The server connects before accepting requests and logs the database name after a successful connection. If the connection fails, startup fails instead of silently switching back to SQLite.
 
 Hosted deployments refuse to start without `MONGODB_URI`, so production data cannot silently fall back to an ephemeral local SQLite file. After startup, `https://<your-service>/api/health` reports `"database":"mongodb"` when Atlas is active.

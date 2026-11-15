@@ -289,7 +289,7 @@ async function connectDatabase() {
       serverSelectionTimeoutMS: 10000,
     })
     await mongoClient.connect()
-    const mongoDatabase = mongoClient.db(process.env.MONGODB_DB || undefined)
+    const mongoDatabase = mongoClient.db(process.env.MONGODB_DB || 'ogonok')
     const collections = {
       orders: mongoDatabase.collection('orders'),
       reservations: mongoDatabase.collection('reservations'),
