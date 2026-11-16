@@ -13,7 +13,7 @@ const user = ref({
   roleName: '',
 })
 const roleLabels = {
-  creator: 'creator',
+  business: 'business',
   chef: 'chef',
   courier: 'courier',
   admin: 'admin',
@@ -29,11 +29,14 @@ const navItems = [
   { path: '/employees', label: 'hr', icon: 'users' },
   { path: '/settings', label: 'settings', icon: 'settings' },
 ]
-const limitedRoutes = computed(() => user.value.role === 'chef'
-  ? ['/menu', '/orders']
-  : user.value.role === 'courier'
-    ? ['/orders']
-    : null)
+const limitedRoutes = computed(() => {
+  const allowedRoutes = {
+    admin: ['/', '/orders', '/reservations', '/customers', '/analytics', '/settings'],
+    chef: ['/menu', '/orders'],
+    courier: ['/orders'],
+  }
+  return allowedRoutes[user.value.role] || null
+})
 const visibleNavItems = computed(() => navItems.filter(item => !limitedRoutes.value || limitedRoutes.value.includes(item.path)))
 const pageTitle = computed(() => t(navItems.find(item => item.path === route.path)?.label || 'dashboard'))
 

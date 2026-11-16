@@ -17,6 +17,7 @@ import { t } from '../../i18n'
         <RouterLink to="/menu">{{ t('ourMenu') }}</RouterLink>
         <RouterLink to="/reservation">{{ t('reservations') }}</RouterLink>
         <RouterLink to="/track">{{ t('track') }}</RouterLink>
+        <RouterLink to="/complaint">{{ t('writeComplaint') }}</RouterLink>
       </div>
       <div>
         <h3>{{ t('visit') }}</h3>

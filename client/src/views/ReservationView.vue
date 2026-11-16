@@ -21,6 +21,7 @@ async function submitReservation() {
   const reservation = {
     id: Date.now(),
     customer: name.value,
+    customerStatus: 'Business',
     phone: phone.value,
     email: email.value,
     date: date.value,

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { t } from '../i18n'
 
 const employees = ref([])
@@ -7,14 +7,18 @@ const loading = ref(true)
 const error = ref('')
 const saving = ref(false)
 const currentRole = sessionStorage.getItem('savory-admin-role')
-const canManageEmployees = ['creator', 'admin', 'analyst'].includes(currentRole)
-const canAddEmployees = ['creator', 'admin'].includes(currentRole)
+const canManageEmployees = ['business', 'analyst'].includes(currentRole)
+const canAddEmployees = currentRole === 'business'
+const canEditEmployee = employee => canManageEmployees &&
+  (currentRole === 'business' || !['admin', 'business'].includes(employee.role))
 const roles = [
   { value: 'chef', label: 'chef' },
   { value: 'courier', label: 'courier' },
   { value: 'admin', label: 'admin' },
   { value: 'analyst', label: 'analyst' },
+  { value: 'business', label: 'business' },
 ]
+const availableRoles = computed(() => canAddEmployees ? roles : roles.filter(role => !['admin', 'business'].includes(role.value)))
 const newEmployee = ref({ username: '', displayName: '', password: '', role: 'chef' })
 const edits = ref({})
 
@@ -118,7 +122,7 @@ onMounted(loadEmployees)
         <label>{{ t('name') }}<input v-model="newEmployee.displayName" required maxlength="80" :placeholder="t('fullName')" /></label>
         <label>{{ t('login') }}<input v-model="newEmployee.username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9._\-]+" autocomplete="off" /></label>
         <label>{{ t('password') }}<input v-model="newEmployee.password" required minlength="8" type="password" autocomplete="new-password" /></label>
-        <label>{{ t('role') }}<select v-model="newEmployee.role"><option v-for="role in roles" :key="role.value" :value="role.value">{{ t(role.label) }}</option></select></label>
+        <label>{{ t('role') }}<select v-model="newEmployee.role"><option v-for="role in availableRoles" :key="role.value" :value="role.value">{{ t(role.label) }}</option></select></label>
         <button class="primary-button" type="submit" :disabled="saving">{{ t('addEmployee') }}</button>
       </div>
     </form>
@@ -130,9 +134,9 @@ onMounted(loadEmployees)
           <div class="customer-avatar">{{ employee.displayName.split(' ').map(part => part[0]).join('').slice(0, 2) }}</div>
           <div><strong>{{ employee.displayName }}</strong><small>@{{ employee.username }}</small></div>
         </div>
-        <template v-if="canManageEmployees">
+        <template v-if="canEditEmployee(employee)">
           <label>{{ t('name') }}<input v-model="edits[employee.username].displayName" required maxlength="80" /></label>
-          <label>{{ t('role') }}<select v-model="edits[employee.username].role"><option v-for="role in roles" :key="role.value" :value="role.value">{{ t(role.label) }}</option></select></label>
+          <label>{{ t('role') }}<select v-model="edits[employee.username].role"><option v-for="role in availableRoles" :key="role.value" :value="role.value">{{ t(role.label) }}</option></select></label>
           <label>{{ t('newPassword') }}<input v-model="edits[employee.username].password" minlength="8" type="password" autocomplete="new-password" :placeholder="t('leaveBlank')" /></label>
           <div class="hr-employee-actions">
             <button class="primary-button" type="button" :disabled="saving" @click="updateEmployee(employee)">{{ t('save') }}</button>

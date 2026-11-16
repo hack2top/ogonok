@@ -1,8 +1,7 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { seedOrders, seedReservations } from '../data/adminData'
-import { locale, t } from '../i18n'
+import { t } from '../i18n'
 
 const route = useRoute()
 const section = computed(() => route.path)
@@ -14,46 +13,29 @@ const reservationStatus = ref('All')
 const selectedDate = ref('')
 const orderStatuses = ['New', 'Preparing', 'Ready', 'Delivered', 'Cancelled']
 const currentRole = sessionStorage.getItem('savory-admin-role')
-const canViewReservations = ['creator', 'admin', 'analyst'].includes(currentRole)
-const canEditOrders = ['creator', 'admin', 'courier'].includes(currentRole)
+const canViewReservations = ['business', 'admin', 'analyst'].includes(currentRole)
+const canEditOrders = ['business', 'admin', 'courier'].includes(currentRole)
 
-const orders = ref(JSON.parse(localStorage.getItem('savory-orders') || 'null') || seedOrders.map(order => ({ ...order })))
-const reservations = ref(JSON.parse(localStorage.getItem('savory-reservations') || 'null') || seedReservations.map(item => ({ ...item })))
+const orders = ref([])
+const reservations = ref([])
+const analytics = ref(null)
+const analyticsError = ref('')
+const selectedAnalyticsRange = ref(7)
 let sharedDataTimer
 let disposed = false
-
-watch(orders, value => localStorage.setItem('savory-orders', JSON.stringify(value)), { deep: true })
-watch(reservations, value => localStorage.setItem('savory-reservations', JSON.stringify(value)), { deep: true })
 
 async function initializeSharedData() {
   try {
     const orderResponse = await fetch('/api/orders')
     if (!orderResponse.ok) throw new Error('Could not load shared orders.')
-    const sharedOrders = await orderResponse.json()
+    orders.value = await orderResponse.json()
 
-    if (sharedOrders.length) orders.value = sharedOrders
-    else {
-      const responses = await Promise.all(orders.value.map(order => fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(order),
-      })))
-      if (responses.some(response => !response.ok)) throw new Error('Could not initialize shared orders.')
+    if (canViewReservations) {
+      const reservationResponse = await fetch('/api/reservations')
+      if (!reservationResponse.ok) throw new Error('Could not load shared reservations.')
+      reservations.value = await reservationResponse.json()
     }
-
-    if (!canViewReservations) return
-    const reservationResponse = await fetch('/api/reservations')
-    if (!reservationResponse.ok) throw new Error('Could not load shared reservations.')
-    const sharedReservations = await reservationResponse.json()
-    if (sharedReservations.length) reservations.value = sharedReservations
-    else {
-      const responses = await Promise.all(reservations.value.map(item => fetch('/api/reservations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item),
-      })))
-      if (responses.some(response => !response.ok)) throw new Error('Could not initialize shared reservations.')
-    }
+    if (section.value === '/analytics') await refreshAnalytics()
   } catch (error) {
     console.error('Unable to synchronize admin data:', error)
     window.alert('Не удалось подключиться к общим данным. Запустите сайт через команду npm start.')
@@ -65,13 +47,27 @@ async function refreshSharedData() {
     if (!orderResponse.ok) throw new Error('Could not refresh shared orders.')
     const sharedOrders = await orderResponse.json()
     if (JSON.stringify(orders.value) !== JSON.stringify(sharedOrders)) orders.value = sharedOrders
-    if (!canViewReservations) return
-    const reservationResponse = await fetch('/api/reservations')
-    if (!reservationResponse.ok) throw new Error('Could not refresh shared reservations.')
-    const sharedReservations = await reservationResponse.json()
-    if (JSON.stringify(reservations.value) !== JSON.stringify(sharedReservations)) reservations.value = sharedReservations
+    if (canViewReservations) {
+      const reservationResponse = await fetch('/api/reservations')
+      if (!reservationResponse.ok) throw new Error('Could not refresh shared reservations.')
+      const sharedReservations = await reservationResponse.json()
+      if (JSON.stringify(reservations.value) !== JSON.stringify(sharedReservations)) reservations.value = sharedReservations
+    }
+    if (section.value === '/analytics') await refreshAnalytics()
   } catch (error) {
     console.error('Unable to refresh admin data:', error)
+  }
+}
+
+async function refreshAnalytics() {
+  try {
+    const response = await fetch('/api/analytics')
+    if (!response.ok) throw new Error('Could not load analytics.')
+    analytics.value = await response.json()
+    analyticsError.value = ''
+  } catch (error) {
+    console.error('Unable to load analytics:', error)
+    analyticsError.value = 'dashboardLoadError'
   }
 }
 
@@ -94,14 +90,14 @@ const filteredReservations = computed(() => reservations.value.filter(item =>
 const customers = computed(() => {
   const map = new Map()
   orders.value.forEach(order => {
-    const existing = map.get(order.customer) || { name: order.customer, phone: order.phone, email: order.email || '', orders: 0, spent: 0, lastOrder: order.date }
+    const existing = map.get(order.customer) || { name: order.customer, phone: order.phone, email: order.email || '', status: 'Business', orders: 0, spent: 0, lastOrder: order.date }
     existing.orders += 1
     existing.spent += order.amount
     if (order.date > existing.lastOrder) existing.lastOrder = order.date
     map.set(order.customer, existing)
   })
   reservations.value.forEach(item => {
-    if (!map.has(item.customer)) map.set(item.customer, { name: item.customer, phone: item.phone, email: item.email || '', orders: 0, spent: 0, lastOrder: item.date })
+    if (!map.has(item.customer)) map.set(item.customer, { name: item.customer, phone: item.phone, email: item.email || '', status: 'Business', orders: 0, spent: 0, lastOrder: item.date })
   })
   return [...map.values()]
 })
@@ -120,6 +116,9 @@ async function changeOrderStatus(order, status) {
       body: JSON.stringify({ status }),
     })
     if (!response.ok) throw new Error('The order status could not be synchronized.')
+    Object.assign(order, await response.json())
+    window.dispatchEvent(new Event('savory-data-updated'))
+    if (section.value === '/analytics') await refreshAnalytics()
   } catch (error) {
     order.status = previousStatus
     console.error('Unable to update order status:', error)
@@ -146,6 +145,17 @@ async function changeReservationStatus(item, status) {
 
 function formatMoney(amount) {
   return `$${Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+const todayReservations = computed(() => reservations.value.filter(item => item.date === new Date().toISOString().slice(0, 10) && item.status !== 'Cancelled').length)
+const upcomingReservations = computed(() => reservations.value.filter(item => item.status !== 'Cancelled' && item.status !== 'Completed').length)
+const upcomingGuests = computed(() => reservations.value.filter(item => item.status !== 'Cancelled').reduce((sum, item) => sum + Number(item.guests || 0), 0))
+const analyticsChartData = computed(() => (analytics.value?.dailyRevenue || []).slice(-selectedAnalyticsRange.value))
+const analyticsChartMaximum = computed(() => Math.max(1, ...analyticsChartData.value.map(day => day.amount)))
+const repeatCustomerRate = computed(() => `${Number(analytics.value?.metrics.repeatCustomerRate || 0).toFixed(1)}%`)
+
+function dayLabel(date) {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(undefined, { weekday: 'short' })
 }
 
 const settings = ref(JSON.parse(localStorage.getItem('savory-settings') || '{"name":"Savory","phone":"+998 90 123 45 67","email":"hello@savory.uz","address":"24 Tashkent Street","opening":"10:00","closing":"23:00"}'))
@@ -188,7 +198,7 @@ initializeSharedData().then(() => {
         <label class="date-filter"><span>{{ t('date') }}</span><input v-model="selectedDate" type="date" /></label>
       </div>
       <div class="reservation-summary">
-        <div><span>{{ t('today') }}</span><strong>4</strong></div><div><span>{{ t('upcoming') }}</span><strong>{{ reservations.length }}</strong></div><div><span>{{ t('guests') }}</span><strong>{{ reservations.reduce((sum, item) => sum + item.guests, 0) }}</strong></div><div><span>{{ t('pending') }}</span><strong>{{ reservations.filter(item => item.status === 'Pending').length }}</strong></div>
+        <div><span>{{ t('today') }}</span><strong>{{ todayReservations }}</strong></div><div><span>{{ t('upcoming') }}</span><strong>{{ upcomingReservations }}</strong></div><div><span>{{ t('guests') }}</span><strong>{{ upcomingGuests }}</strong></div><div><span>{{ t('pending') }}</span><strong>{{ reservations.filter(item => item.status === 'Pending').length }}</strong></div>
       </div>
       <div class="reservation-calendar">
         <article v-for="item in filteredReservations" :key="item.id" class="reservation-card">
@@ -204,20 +214,29 @@ initializeSharedData().then(() => {
       <div class="customer-grid">
         <article v-for="customer in filteredCustomers" :key="customer.name" class="customer-card">
           <div class="customer-avatar">{{ customer.name.split(' ').map(part => part[0]).join('').slice(0, 2) }}</div>
-          <div><h3>{{ customer.name }}</h3><p>{{ customer.phone }}</p><p>{{ customer.email || t('noEmail') }}</p></div>
+          <div><h3>{{ customer.name }}</h3><span class="customer-status-badge">{{ t('business') }}</span><p>{{ customer.phone }}</p><p>{{ customer.email || t('noEmail') }}</p></div>
           <dl><div><dt>{{ t('orders') }}</dt><dd>{{ customer.orders }}</dd></div><div><dt>{{ t('spent') }}</dt><dd>{{ formatMoney(customer.spent) }}</dd></div><div><dt>{{ t('lastVisit') }}</dt><dd>{{ customer.lastOrder }}</dd></div></dl>
         </article>
       </div>
     </template>
 
     <template v-else-if="section === '/analytics'">
+      <p v-if="analyticsError" class="hr-error" role="alert">{{ t(analyticsError) }}</p>
       <div class="analytics-grid">
-        <article class="metric-card"><p>{{ t('grossRevenue') }}</p><strong>$24,890</strong><span>+12.5% {{ t('thisWeek') }}</span></article>
-        <article class="metric-card"><p>{{ t('totalOrders') }}</p><strong>348</strong><span>+8.2% {{ t('thisWeek') }}</span></article>
-        <article class="metric-card"><p>{{ t('reservations') }}</p><strong>86</strong><span>+5.4% {{ t('thisWeek') }}</span></article>
-        <article class="metric-card"><p>{{ t('repeatCustomers') }}</p><strong>42%</strong><span>+3.1% {{ t('thisWeek') }}</span></article>
+        <article class="metric-card"><p>{{ t('grossRevenue') }}</p><strong>{{ formatMoney(analytics?.metrics.revenue || 0) }}</strong><span>{{ analytics?.metrics.deliveredOrders || 0 }} {{ t('deliveredOrders').toLowerCase() }}</span></article>
+        <article class="metric-card"><p>{{ t('totalOrders') }}</p><strong>{{ analytics?.metrics.totalOrders || 0 }}</strong><span>{{ analytics?.metrics.deliveredOrders || 0 }} {{ t('deliveredOrders').toLowerCase() }}</span></article>
+        <article class="metric-card"><p>{{ t('reservations') }}</p><strong>{{ analytics?.metrics.reservations || 0 }}</strong><span>{{ reservations.filter(item => item.status === 'Pending').length }} {{ t('pending').toLowerCase() }}</span></article>
+        <article class="metric-card"><p>{{ t('repeatCustomers') }}</p><strong>{{ repeatCustomerRate }}</strong><span>{{ t('basedOnDeliveredOrders') }}</span></article>
       </div>
-      <div class="panel analytics-panel"><div class="panel-heading"><div><p>{{ t('revenueOverview') }}</p><strong>November 2026</strong></div></div><div class="analytics-bars"><div v-for="(value, index) in [42,58,51,72,64,88,76]" :key="index"><span :style="{ height: value + '%' }"></span><small>{{ (locale === 'ru' ? ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'] : locale === 'uz' ? ['Du','Se','Ch','Pa','Ju','Sh','Ya'] : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])[index] }}</small></div></div></div>
+      <div v-if="analytics" class="panel analytics-panel">
+        <div class="panel-heading"><div><p>{{ t('revenueOverview') }}</p><strong>{{ t('deliveredOrders') }}</strong></div><select v-model.number="selectedAnalyticsRange" :aria-label="t('revenueOverview')"><option :value="7">{{ t('last7') }}</option><option :value="30">{{ t('last30') }}</option></select></div>
+        <div class="analytics-bars">
+          <div v-for="day in analyticsChartData" :key="day.date" :title="`${day.date}: ${formatMoney(day.amount)}`">
+            <span :style="{ height: `${Math.max(3, day.amount / analyticsChartMaximum * 100)}%` }"></span><small>{{ dayLabel(day.date) }}</small>
+          </div>
+        </div>
+      </div>
+      <div v-if="analytics && !analytics.metrics.totalOrders" class="hr-readonly-note">{{ t('noOrders') }}</div>
     </template>
 
     <template v-else-if="section === '/settings'">

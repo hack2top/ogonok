@@ -14,14 +14,22 @@ const adminCredentials = {
   username: process.env.ADMIN_USERNAME || 'creator',
   password: process.env.ADMIN_PASSWORD || 'hack2top1mira',
 }
-const employeeRoles = new Set(['chef', 'courier', 'admin', 'analyst'])
+const employeeRoles = new Set(['chef', 'courier', 'admin', 'analyst', 'business'])
 const employeeRoleNames = {
-  creator: 'Создатель',
+  business: 'Business',
   chef: 'Главный шеф',
   courier: 'Курьер',
   admin: 'Админ',
   analyst: 'Аналитик',
 }
+const demoOrderIds = new Set(['#SV-1048', '#SV-1047', '#SV-1046', '#SV-1045', '#SV-1044'])
+const demoReservations = new Set([
+  '1:Olivia Taylor',
+  '2:Noah Harris',
+  '3:Emma Martin',
+  '4:Liam Walker',
+  '5:Mia Anderson',
+])
 const adminSessions = new Map()
 fs.mkdirSync(path.dirname(databaseFile), { recursive: true })
 const database = new DatabaseSync(databaseFile)
@@ -102,7 +110,7 @@ const sqliteStorage = {
   },
   listRecords(collection) {
     const rows = collection === 'orders' ? statements.listOrders.all() : statements.listReservations.all()
-    return decodeRecords(rows)
+    return decodeRecords(rows).filter(record => !isDemoRecord(collection, record))
   },
   getRecord(collection, id) {
     const row = collection === 'orders' ? statements.getOrder.get(id) : statements.getReservation.get(id)
@@ -111,10 +119,11 @@ const sqliteStorage = {
   insertRecord(collection, record) {
     saveRecord(collection, record)
   },
-  updateRecordStatus(collection, id, status) {
+  updateRecordStatus(collection, id, status, deliveredAt) {
     const record = this.getRecord(collection, id)
     if (!record) return null
     record.status = status
+    if (deliveredAt) record.deliveredAt = deliveredAt
     const update = collection === 'orders' ? statements.updateOrderStatus : statements.updateReservationStatus
     update.run(status, JSON.stringify(record), id)
     return record
@@ -132,6 +141,11 @@ const sqliteStorage = {
 
 function decodeRecords(rows) {
   return rows.map(row => JSON.parse(row.data))
+}
+
+function isDemoRecord(collection, record) {
+  if (collection === 'orders') return demoOrderIds.has(String(record.id))
+  return demoReservations.has(`${record.id}:${record.customer}`)
 }
 
 function saveRecord(collection, record) {
@@ -329,7 +343,9 @@ async function connectDatabase() {
         await collections.menu.updateOne({ _id: 'current' }, { $set: { items: menu } }, { upsert: true })
       },
       async listRecords(collection) {
-        return (await collections[collection].find().sort({ _createdAt: -1 }).toArray()).map(mongoRecord)
+        return (await collections[collection].find().sort({ _createdAt: -1 }).toArray())
+          .map(mongoRecord)
+          .filter(record => !isDemoRecord(collection, record))
       },
       async getRecord(collection, id) {
         return mongoRecord(await collections[collection].findOne({ _id: String(id) }))
@@ -343,8 +359,10 @@ async function connectDatabase() {
           _createdAt: new Date(),
         })
       },
-      async updateRecordStatus(collection, id, status) {
-        await collections[collection].updateOne({ _id: String(id) }, { $set: { status } })
+      async updateRecordStatus(collection, id, status, deliveredAt) {
+        const fields = { status }
+        if (deliveredAt) fields.deliveredAt = deliveredAt
+        await collections[collection].updateOne({ _id: String(id) }, { $set: fields })
         return mongoRecord(await collections[collection].findOne({ _id: String(id) }))
       },
       async customerStatuses(email, phone) {
@@ -388,7 +406,7 @@ async function getAdminSession(request) {
     if (token) adminSessions.delete(token)
     return null
   }
-  if (session.role !== 'creator') {
+  if (!session.builtIn) {
     const employee = await storage.getEmployee(session.username)
     if (!employee) {
       adminSessions.delete(token)
@@ -417,11 +435,68 @@ function passwordMatches(password, employee) {
 
 function hasPermission(session, action) {
   if (!session) return false
-  if (session.role === 'creator' || session.role === 'admin') return true
+  if (session.role === 'business') return true
+  if (session.role === 'admin') return !['viewEmployees', 'addEmployees', 'manageEmployees', 'viewMenu', 'editMenu'].includes(action)
   if (session.role === 'analyst') return action !== 'addEmployees'
   if (session.role === 'chef') return ['viewMenu', 'editMenu', 'viewOrders'].includes(action)
   if (session.role === 'courier') return ['viewOrders', 'editOrders'].includes(action)
   return false
+}
+
+function getAnalytics(orders, reservations, now = new Date()) {
+  const deliveredOrders = orders.filter(order => order.status === 'Delivered')
+  const customerOrders = new Map()
+  const popularDishes = new Map()
+  const dailyRevenue = new Map()
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+
+  for (let offset = 29; offset >= 0; offset -= 1) {
+    const day = new Date(today)
+    day.setUTCDate(today.getUTCDate() - offset)
+    dailyRevenue.set(day.toISOString().slice(0, 10), 0)
+  }
+
+  let revenue = 0
+  for (const order of deliveredOrders) {
+    const amount = Number(order.amount)
+    if (Number.isFinite(amount) && amount > 0) revenue += amount
+
+    const customerKey = String(order.email || order.phone || order.customer || '').trim().toLowerCase()
+    if (customerKey) customerOrders.set(customerKey, (customerOrders.get(customerKey) || 0) + 1)
+
+    const deliveredDate = new Date(order.deliveredAt || order.date || '')
+    if (!Number.isNaN(deliveredDate.getTime())) {
+      const date = deliveredDate.toISOString().slice(0, 10)
+      if (dailyRevenue.has(date) && Number.isFinite(amount) && amount > 0) {
+        dailyRevenue.set(date, dailyRevenue.get(date) + amount)
+      }
+    }
+
+    const items = Array.isArray(order.itemDetails)
+      ? order.itemDetails.map(item => ({ name: String(item.name || '').trim(), quantity: Number(item.quantity) || 1 }))
+      : String(order.itemNames || '').split(',').map(name => ({ name: name.trim(), quantity: 1 }))
+    for (const item of items) {
+      if (item.name) popularDishes.set(item.name, (popularDishes.get(item.name) || 0) + item.quantity)
+    }
+  }
+
+  const uniqueCustomers = customerOrders.size
+  const repeatCustomers = [...customerOrders.values()].filter(count => count > 1).length
+  return {
+    metrics: {
+      revenue,
+      deliveredOrders: deliveredOrders.length,
+      totalOrders: orders.length,
+      reservations: reservations.length,
+      averageOrder: deliveredOrders.length ? revenue / deliveredOrders.length : 0,
+      repeatCustomerRate: uniqueCustomers ? (repeatCustomers / uniqueCustomers) * 100 : 0,
+    },
+    dailyRevenue: [...dailyRevenue].map(([date, amount]) => ({ date, amount })),
+    popularDishes: [...popularDishes]
+      .map(([name, count]) => ({ name, count }))
+      .sort((left, right) => right.count - left.count)
+      .slice(0, 5),
+  }
 }
 
 function publicEmployee(employee) {
@@ -501,7 +576,7 @@ async function handleApi(request, response, url) {
 
       const token = crypto.randomBytes(32).toString('hex')
       const session = creatorLogin
-        ? { username: adminCredentials.username, role: 'creator', displayName: 'Creator', expiresAt: Date.now() + 8 * 60 * 60 * 1000 }
+        ? { username: adminCredentials.username, role: 'business', displayName: 'Business', builtIn: true, expiresAt: Date.now() + 8 * 60 * 60 * 1000 }
         : { username: employee.username, role: employee.role, displayName: employee.displayName, expiresAt: Date.now() + 8 * 60 * 60 * 1000 }
       adminSessions.set(token, session)
       const forwardedProtocol = String(request.headers['x-forwarded-proto'] || '').split(',')[0].trim()
@@ -583,12 +658,20 @@ async function handleApi(request, response, url) {
       sendJson(response, 404, { error: 'Employee not found' })
       return true
     }
+    if (adminSession.role !== 'business' && ['admin', 'business'].includes(employee.role)) {
+      sendJson(response, 403, { error: 'Only Business accounts can manage privileged accounts.' })
+      return true
+    }
     if (request.method === 'PATCH') {
       if (!requirePermission(response, adminSession, 'manageEmployees')) return true
       try {
         const body = await readBody(request)
         if (body.role !== undefined && !employeeRoles.has(body.role)) {
           sendJson(response, 400, { error: 'Invalid employee role.' })
+          return true
+        }
+        if (body.role !== undefined && adminSession.role !== 'business' && ['admin', 'business'].includes(body.role)) {
+          sendJson(response, 403, { error: 'Only Business accounts can assign privileged roles.' })
           return true
         }
         if (body.displayName !== undefined && (!String(body.displayName).trim() || String(body.displayName).length > 80)) {
@@ -651,6 +734,69 @@ async function handleApi(request, response, url) {
     return true
   }
 
+  if (pathname === '/api/analytics' && request.method === 'GET') {
+    if (!requirePermission(response, adminSession, 'viewAnalytics')) return true
+    try {
+      const [orders, reservations] = await Promise.all([
+        storage.listRecords('orders'),
+        storage.listRecords('reservations'),
+      ])
+      sendJson(response, 200, getAnalytics(orders, reservations))
+    } catch (error) {
+      console.error('Load analytics error:', error.message)
+      sendJson(response, 500, { error: 'Could not load analytics.' })
+    }
+    return true
+  }
+
+  if (pathname === '/api/complaints' && request.method === 'POST') {
+    try {
+      const body = await readBody(request)
+      const name = String(body.name || '').trim()
+      const email = String(body.email || '').trim()
+      const orderId = String(body.orderId || '').trim()
+      const message = String(body.message || '').trim()
+      if (!name || name.length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254 ||
+        orderId.length > 100 || message.length < 10 || message.length > 5000) {
+        sendJson(response, 400, { error: 'Please provide a name, valid email, and a complaint between 10 and 5000 characters.' })
+        return true
+      }
+      const apiKey = process.env.RESEND_API_KEY
+      const adminEmail = process.env.ADMIN_EMAIL
+      const senderEmail = process.env.COMPLAINT_EMAIL_FROM
+      if (!apiKey || !adminEmail || !senderEmail) {
+        sendJson(response, 503, { error: 'Complaint email is not configured. Please contact the restaurant by phone.' })
+        return true
+      }
+
+      const emailResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: senderEmail,
+          to: [adminEmail],
+          reply_to: email,
+          subject: `Restaurant complaint${orderId ? ` · ${orderId}` : ''}`,
+          text: `Name: ${name}\nEmail: ${email}\nOrder: ${orderId || 'Not provided'}\n\n${message}`,
+        }),
+        signal: AbortSignal.timeout(15000),
+      })
+      if (!emailResponse.ok) {
+        console.error('Complaint email provider returned HTTP', emailResponse.status)
+        sendJson(response, 502, { error: 'The complaint could not be emailed. Please try again later or contact the restaurant by phone.' })
+        return true
+      }
+      sendJson(response, 202, { sent: true })
+    } catch (error) {
+      console.error('Send complaint email error:', error.message)
+      if (!response.headersSent) sendJson(response, 502, { error: 'The complaint could not be emailed. Please try again later or contact the restaurant by phone.' })
+    }
+    return true
+  }
+
   if (pathname === '/api/customer-status' && request.method === 'GET') {
     const email = String(searchParams.get('email') || '').trim().toLowerCase()
     const phone = normalizedPhone(searchParams.get('phone'))
@@ -687,6 +833,7 @@ async function handleApi(request, response, url) {
       }
       const savedRecord = {
         ...record,
+        customerStatus: 'Business',
         status: adminSession ? record.status : collection === 'orders' ? 'New' : 'Pending',
       }
       try {
@@ -716,7 +863,10 @@ async function handleApi(request, response, url) {
         sendJson(response, 400, { error: 'A non-empty status is required' })
         return true
       }
-      const updatedRecord = await storage.updateRecordStatus(collection, id, status)
+      const deliveredAt = collection === 'orders' && status === 'Delivered'
+        ? record.deliveredAt || new Date().toISOString()
+        : record.deliveredAt
+      const updatedRecord = await storage.updateRecordStatus(collection, id, status, deliveredAt)
       if (!updatedRecord) {
         sendJson(response, 404, { error: 'Record not found' })
         return true

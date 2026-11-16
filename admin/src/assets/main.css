@@ -102,6 +102,15 @@ button, a, select { cursor: pointer; }
 :root[data-theme='dark']{color-scheme:dark;--ink:#edf0e9;--muted:#a9b0a7;--line:#3a453c;--canvas:#171d19;--green:#182b21;--cream:#222a24}
 :root[data-theme='dark'] body{background:var(--canvas);color:var(--ink)}
 :root[data-theme='dark'] :is(.sidebar,.topbar,.stat-card,.panel,.reservation-summary div,.reservation-card,.customer-card,.metric-card,.hr-add-form,.hr-employee-card,.management-dish-card,.management-modal,.date-filter){background:#222a24;color:var(--ink);border-color:var(--line)}
+
+.dashboard-error{margin:8px 0 14px;padding:12px 14px;border:1px solid #e8c9bf;border-radius:8px;background:#fbefeb;color:#934d3d;font-size:12px}
+.dashboard-revenue-bars{height:245px;padding:24px 20px 14px;display:flex;align-items:flex-end;gap:8px}
+.dashboard-revenue-bars>div{height:100%;min-width:0;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:7px}
+.dashboard-revenue-bars span{width:100%;max-width:44px;border-radius:5px 5px 0 0;background:linear-gradient(180deg,var(--orange),#dfb19d)}
+.dashboard-revenue-bars small{color:#999;font-size:9px}
+.popular-dish-row .dish-rank{width:42px;height:42px;border-radius:7px;background:#edf3ed;color:#66866e;display:grid;place-items:center;font-family:'Manrope';font-weight:800}
+.empty-dashboard{padding:18px;color:var(--muted);font-size:12px;text-align:center}
+.customer-status-badge{display:inline-block;margin:3px 0 6px;padding:3px 8px;border-radius:12px;background:#edf3ed;color:#587360;font-size:9px;font-weight:700}
 :root[data-theme='dark'] .topbar{background:rgba(23,29,25,.96)}
 :root[data-theme='dark'] :is(.search-box,.search-box input,.panel-heading select,.hr-form-grid input,.hr-form-grid select,.hr-employee-card input,.hr-employee-card select,.management-search,.management-search input,.filter-buttons button,.status-select,.settings-fields input,.management-modal input,.management-modal textarea,.management-modal select,.date-filter input,.admin-language select,.admin-theme-toggle,.login-preferences select,.login-preferences button){background:#1b221d;color:var(--ink);border-color:var(--line)}
 :root[data-theme='dark'] :is(.nav-item,.return-site-button,.icon-action,.secondary-button,.logout-button){color:#d5dbd2}

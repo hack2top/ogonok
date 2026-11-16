@@ -43,6 +43,24 @@ Hosted deployments refuse to start without `MONGODB_URI`, so production data can
 
 When Atlas is first configured, existing SQLite orders, reservations, employees, and menu entries are imported without replacing documents already present in Atlas. The SQLite database is retained as a local copy.
 
+### Live analytics and access roles
+
+The admin dashboard and Analytics page use orders and reservations from the shared database; sample seed records are no longer uploaded when the admin panel opens. Revenue, average order value, repeat-customer rate, and popular dishes are calculated from orders currently marked `Delivered`. Changing an order to `Delivered` records its delivery time and refreshes the analytics immediately.
+
+The built-in account configured by `ADMIN_USERNAME` and `ADMIN_PASSWORD` signs in with the `Business` role. Business accounts have full admin access. The `Admin` employee role can access the dashboard, orders, reservations, customers, analytics, and settings, but cannot access HR or the menu editor. Orders and reservations submitted by customers do not create staff accounts or grant admin-panel access. Only an authorized Business account can create staff accounts and assign the Business role.
+
+### Complaint email
+
+The customer site includes a complaint form. It sends complaints to the administrator through the Resend email API. Set these server-side environment variables in Render:
+
+```text
+RESEND_API_KEY=<private Resend API key>
+ADMIN_EMAIL=<administrator email address>
+COMPLAINT_EMAIL_FROM=<sender address on a verified Resend domain>
+```
+
+Keep the API key private. Verify the sender domain with Resend before using the form. Until all three values are configured, complaint submissions return an explicit setup error instead of showing a false success.
+
 ### SQLite fallback
 
 Without `MONGODB_URI`, the local database is `restaurant-data.sqlite` in the project root. To keep SQLite data across Render deploys, attach a persistent disk and set:

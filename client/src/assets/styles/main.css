@@ -113,6 +113,11 @@ h1 em,h2 em { font-weight:600; }
   .hero{grid-template-columns:1fr;height:auto;min-height:760px}.hero-copy{padding:130px 24px 60px}.hero h1{font-size:58px}.hero-visual{height:360px}.hero-image{mask-image:none}.rating-card{top:20px}.open-card{bottom:20px}.featured{padding:70px 0}.section-heading h2{font-size:42px}.dish-grid,.menu-grid{grid-template-columns:1fr}.dish-image{height:300px}.story{grid-template-columns:1fr}.story-image{height:380px}.story-copy{padding:70px 24px}.story-copy h2{font-size:42px}.form-page{grid-template-columns:1fr;padding:60px 0}.reservation-image{min-height:360px}.footer-main{grid-template-columns:1fr 1fr}.footer-bottom{padding:0 16px}.menu-card{grid-template-columns:150px 1fr}.menu-card img{width:150px}
 }
 
+.complaint-intro{max-width:680px;color:#697069;line-height:1.7}
+.complaint-form{max-width:680px}
+.complaint-form textarea{width:100%;margin-top:8px;padding:14px;border:1px solid var(--line);background:white;resize:vertical;font:inherit;line-height:1.5}
+.complaint-form button:disabled{opacity:.6;cursor:wait}
+
 [data-reveal] {
   opacity: 0;
   transform: translateY(28px);
